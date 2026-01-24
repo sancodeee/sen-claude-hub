@@ -4,8 +4,5 @@
   "description": "Optimize the MCP call process",
   "author": {
     "name": "sen"
-  },
-  "skills": [
-    "mcp-faster-caller"
-  ]
+  }
 }
