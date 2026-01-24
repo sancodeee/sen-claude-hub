@@ -9,7 +9,7 @@
     {
       "name": "mcp-faster-caller",
       "description": "Optimize the MCP call process",
-      "repository": "https://github.com/sancodeee/sen-claude-hub/skills/mcp-faster-caller",
+      "repository": "https://github.com/sancodeee/sen-claude-hub",
       "version": "1.0.0"
     }
   ],
