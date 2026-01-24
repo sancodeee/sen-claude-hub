@@ -1,0 +1,17 @@
+{
+  "name": "sen-claude-hub",
+  "description": "Some plugin repositories related to Claude code",
+  "author": {
+    "name": "sen",
+    "github": "sancodeee"
+  },
+  "plugins": [
+    {
+      "name": "mcp-faster-caller",
+      "description": "Optimize the MCP call process",
+      "repository": "https://github.com/sancodeee/sen-claude-hub",
+      "version": "1.0.0"
+    }
+  ],
+  "updatedAt": "2026-01-24"
+}
