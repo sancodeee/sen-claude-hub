@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Optimize the MCP call process",
   "author": {
-    "name": "sen",
-    "github": "sancodeee"
+    "name": "sen"
   },
   "skills": [
     "mcp-faster-caller"
