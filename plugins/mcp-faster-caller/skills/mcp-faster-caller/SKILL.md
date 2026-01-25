@@ -24,7 +24,9 @@ model: inherit
 1. 解析用户输入的指令，提取 alias、command 和 arguments
 2. 使用 Python 脚本 `scripts/call_mcp.py` 解析指令：
    ```bash
-   python3 ~/.claude/skills/mcp-faster-caller/scripts/call_mcp.py "$ARGUMENTS"
+   # python3 ~/.claude/skills/mcp-faster-caller/scripts/call_mcp.py "$ARGUMENTS"
+   python3 ~/.claude/plugins/cache/sen-claude-hub/mcp-faster-caller/1.0.0/skills/mcp-faster-caller/sc
+    +ripts/call_mcp.py "$ARGUMENTS"
    ```
 3. 根据返回结果，调用对应的 MCP 工具
 
