@@ -1,7 +1,8 @@
 {
   "name": "sen-claude-hub",
   "owner": {
-    "name": "sen"
+    "name": "sen",
+    "url": "https://github.com/sancodeee"
   },
   "metadata": {
     "description": "Some plugin repositories related to Claude code"
@@ -11,15 +12,13 @@
       "name": "mcp-faster-caller",
       "source": "./plugins/mcp-faster-caller",
       "description": "Optimize the MCP call process. When it comes to MCP call operations, it is highly recommended to use this plugin.",
-      "version": "1.0.0",
-      "skills": ["./plugins/mcp-faster-caller/skills/mcp-faster-caller"]
+      "version": "1.0.0"
     },
     {
       "name": "global-java-code-style",
       "source": "./plugins/global-java-code-style",
       "description": "Provide standard guidelines for Java coding style, project structure, annotation specifications, exception handling, testing standards, etc.",
-      "version": "1.0.0",
-      "skills": ["./plugins/global-java-code-style/skills/global-java-code-style"]
+      "version": "1.0.0"
     }
   ]
 }
