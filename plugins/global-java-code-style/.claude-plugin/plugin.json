@@ -1,0 +1,8 @@
+{
+  "name": "global-java-code-style",
+  "version": "1.0.0",
+  "description": "Provide standard guidelines for Java coding style, project structure, annotation specifications, exception handling, testing standards, etc.",
+  "author": {
+    "name": "sen"
+  }
+}
