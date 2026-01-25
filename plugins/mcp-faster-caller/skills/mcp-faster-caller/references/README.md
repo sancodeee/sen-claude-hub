@@ -25,7 +25,7 @@
 ### [configuration.md](configuration.md)
 自定义配置指南，包括：
 - 如何添加新别名
-- MCP Server 集成方法
+- MCP Server 集成安装方法
 - 权限配置
 - 高级配置选项
 
