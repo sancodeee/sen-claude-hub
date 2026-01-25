@@ -1,12 +1,10 @@
 ---
 name: mcp-faster-caller
-description: MCP 调用技能，支持中英文双语指令！支持 GitHub 操作、数据库查询、浏览器自动化、网页搜索、图像分析等。使用简单别名快速调用，如：gh（GitHub）、db（数据库）、browser（浏览器）、search（搜索）、image（图像分析）。触发关键词：MCP、mcp、gh、github、git、repo、repository、开源仓库、代码仓库、db、database、sql、mysql、postgres、sqlite、查询数据库、数据库、查库、query、select、browser、浏览器、web、网页、chrome、firefox、edge、safari、谷歌浏览器、浏览器测试、search、搜索、web-reader、网页读取、读取网页、image、picture、photo、illustration、图片、图像、视觉、查看图片、API、API文档、automation、testing、screenshot、navigate、goto、click、type、fast、quick、快捷、快速、call、调用、别名、alias、pdf、pdf-reader、pdf reader、读取pdf、pdf读取、pdf解析、解析pdf
-argument-hint: "[别名] [命令] [参数] 例如：gh list-repos owner=用户名 或 数据库 query 'SELECT * FROM table'"
+description: 使用MCP前务必调用的技能，支持 GitHub (gh/repo)、数据库查询 (db/sql)、浏览器自动化 (browser/web)、网页搜索 (search/read)、API文档搜索、图像/PDF 分析 (image/pdf)。中英文皆可，涉及到关键词或别名也可快速触发。
+argument-hint: "[alias] [command] [arguments] 例如：gh list-repos owner=用户名 或 数据库 query 'SELECT * FROM table'"
 disable-model-invocation: false
 user-invocable: true
-allowed-tools:
-  - Bash
-model: inherit
+allowed-tools: Read, Grep, Glob, Bash
 ---
 
 # MCP Faster Caller
