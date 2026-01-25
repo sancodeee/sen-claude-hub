@@ -38,8 +38,10 @@ db query "SELECT * FROM users LIMIT 5"
 browser goto https://example.com
 ```
 
-## 更多信息
+## 更多信息参考
 
 - 📖 **[完整别名参考](references/mcp_aliases.md)** - 所有可用别名和使用示例
 - 🔧 **[故障排除](references/troubleshooting.md)** - 常见问题和解决方案
-- ⚙️ **[自定义配置](references/configuration.md)** - 如何添加新别名（代码修改方式）以及安装当前缺失的MCP
+- ⚙️ **[自定义配置](references/configuration.md)** - 如何添加新别名（代码修改方式）
+- ⚙️ **[自定义配置](references/configuration.md)** - 如何安装缺失的 ***MCP SERVER***
+
