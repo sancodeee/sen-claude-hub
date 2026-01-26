@@ -1,7 +1,7 @@
 {
   "name": "fintorq-code-style",
   "version": "1.0.0",
-  "description": "Official code style and development standards for Fintorq project - Java 17 + Spring Boot 3.x + MyBatis-Plus. MUST be followed for all code generation.",
+  "description": "Official code style and development standards for Fintorq project. MUST be followed for all code generation.",
   "author": {
     "name": "sen"
   }

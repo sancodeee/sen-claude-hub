@@ -1,5 +1,5 @@
 ---
-name: code-style
+name: fintorq-code-style
 description: Official code style and development standards for the Fintorq project. MUST be followed for all Java code generation.
 user-invocable: true
 ---
