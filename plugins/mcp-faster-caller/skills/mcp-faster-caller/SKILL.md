@@ -2,6 +2,7 @@
 name: mcp-faster-caller
 description: 使用MCP前务必调用的技能，支持 GitHub (gh/repo)、数据库查询 (db/sql)、浏览器自动化 (browser/web)、网页搜索 (search/read)、API文档搜索、图像/PDF 分析 (image/pdf)。中英文皆可，涉及到关键词或别名也可快速触发。
 argument-hint: "[alias] [command] [arguments] 例如：gh list-repos owner=用户名 或 数据库 query 'SELECT * FROM table'"
+user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
