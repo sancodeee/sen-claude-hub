@@ -1,6 +1,6 @@
 ---
 name: fintorq-code-style:invoke
-description: 立即调用 fintorq-code-style skill，对当前代码或项目应用 Fintorq 代码风格规范、检查和修复
+description: Immediately call the fintorq-code-style skill to apply Fintorq code style specifications, perform checks and fixes on the current code or the code specified by the user.
 ---
 
 你现在必须**立即且强制**调用已安装的 **fintorq-code-style** 这个 skill 来处理用户当前的需求。
