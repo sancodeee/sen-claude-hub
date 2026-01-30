@@ -10,20 +10,20 @@
   "plugins": [
     {
       "name": "mcp-faster-caller",
-      "source": "./plugins/mcp-faster-caller",
       "description": "Optimize the MCP call process. When it comes to MCP call operations, it is highly recommended to use this plugin.",
+      "source": "./plugins/mcp-faster-caller",
       "version": "1.0.0"
     },
     {
       "name": "global-java-code-style",
-      "source": "./plugins/global-java-code-style",
       "description": "Provide standard guidelines for Java coding style, project structure, annotation specifications, exception handling, testing standards, etc.",
+      "source": "./plugins/global-java-code-style",
       "version": "1.0.0"
     },
     {
       "name": "fintorq-code-style",
-      "source": "./plugins/fintorq-code-style",
       "description": "Official code style and development standards for Fintorq project. MUST be followed for all code generation.",
+      "source": "./plugins/fintorq-code-style",
       "version": "1.0.0"
     }
   ]
