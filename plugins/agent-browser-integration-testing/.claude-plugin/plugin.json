@@ -1,0 +1,8 @@
+{
+  "name": "agent-browser-integration-testing",
+  "version": "1.0.0",
+  "description": "Execute comprehensive browser integration testing using agent-browser and generate detailed markdown test reports. Supports web application testing, browser automation, validation, and test report generation. Triggered by keywords like '浏览器测试', '网页测试', '集成测试', 'browser test', 'web test', 'integration test', or commands like 'test <url> [operation]'.",
+  "author": {
+    "name": "sen"
+  }
+}
