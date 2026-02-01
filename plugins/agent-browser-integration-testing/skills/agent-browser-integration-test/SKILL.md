@@ -485,6 +485,13 @@ When dangerous operations are detected during `all` testing:
 
 For complete report structure and template, see `references/test-report-template.md`.
 
+## Detailed References
+
+For more detailed information about testing methodologies and scenarios:
+
+- **[Operations Definition](references/operations-definition.md)**: Detailed breakdown of CREATE, READ, UPDATE, DELETE operation types and their specific test criteria.
+- **[Test Scenarios Guide](references/test-scenarios.md)**: Comprehensive guide for testing common web patterns like E-commerce, Forms, Dashboards, and CMS.
+
 ## Best Practices
 
 1. **Always wait for page load** before making assertions
