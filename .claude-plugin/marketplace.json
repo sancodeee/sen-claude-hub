@@ -25,6 +25,12 @@
       "description": "Official code style and development standards for Fintorq project. MUST be followed for all code generation.",
       "source": "./plugins/fintorq-code-style",
       "version": "1.0.0"
+    },
+    {
+      "name": "agent-browser-integration-testing",
+      "description": "Execute comprehensive browser integration testing using agent-browser and generate detailed markdown test reports.",
+      "source": "./plugins/agent-browser-integration-testing",
+      "version": "1.0.0"
     }
   ]
 }

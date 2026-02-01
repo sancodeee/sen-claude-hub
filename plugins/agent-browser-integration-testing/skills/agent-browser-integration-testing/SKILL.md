@@ -1,5 +1,5 @@
 ---
-name: agent-browser-integration-test
+name: agent-browser-integration-testing
 description: Execute comprehensive browser integration testing using agent-browser with full auto-traversal and parallel execution capabilities. Automatically discovers all interactive elements, executes operations with intelligent dependency-aware parallelization, captures API calls, assesses risks, and generates detailed markdown test reports. Use when the user needs to test web applications, perform browser automation testing, validate web functionality, or generate test reports. Triggered by keywords like "浏览器测试", "网页测试", "集成测试", "browser test", "web test", "integration test", or commands like "test <url> [operation]" where operation can be create/read/update/delete/all.
 argument-hint: "<url> [operation] [--parallel] 例如: https://example.com all 或 test https://example.com read"
 user-invocable: true
