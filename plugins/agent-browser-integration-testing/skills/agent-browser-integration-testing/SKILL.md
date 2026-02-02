@@ -21,12 +21,14 @@ description: |
   • 帮我对这个页面做完整集成测试
   • 浏览器页面集成测试 url是xxx 测 CRUD
 
-  This skill executes python scripts/run_test.py --url=... --operation=... and relies 100% on agent-browser CLI inside the script.
+  This skill executes python ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py --url=... --operation=... and relies 100% on agent-browser CLI inside the script.
 compatibility: Requires agent-browser CLI installed in PATH and Python 3+. **agent-browser is the ONLY allowed browser automation method**. No Playwright, no chrome-devtools-mcp, no other MCPs.
 metadata:
   author: sancodeee
   version: 1.1.0
 ---
+
+${CLAUDE_PLUGIN_ROOT}/skills/mcp-faster-caller/scripts/call_mcp.py
 
 # Agent Browser Integration Testing Skill – STRICT AGENT-BROWSER ONLY
 
@@ -41,7 +43,7 @@ metadata:
    请安装 agent-browser：npm install -g @vercel-labs/agent-browser （或参考官方文档）
 ```
 并**停止后续浏览器操作**，不要尝试用其他工具补救。
-4. 所有测试步骤的 agent-browser 调用必须通过 `scripts/run_test.py` 中的 subprocess 执行。
+4. 所有测试步骤的 agent-browser 调用必须通过 `${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py` 中的 subprocess 执行。
 5. 报告中必须列出**每一步实际执行的 agent-browser 命令**。
 
 ## Overview
@@ -60,7 +62,7 @@ This skill automates integration testing in a browser environment for web pages 
 - For natural language, interpret custom requirements (e.g., "focus on login flow").
 - **Dependencies**:
 - agent-browser: Use for all browser interactions (navigation, clicks, API calls simulation).
-- Python: Execute scripts/run_test.py for orchestration and report generation.
+- Python: Execute ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py for orchestration and report generation.
 - Avoid heavy tools: Only fall back if agent-browser insufficient (rare).
 - **Testing Process**:
 1. Open browser to URL using agent-browser.
@@ -74,7 +76,7 @@ This skill automates integration testing in a browser environment for web pages 
 5. Group by modules: Infer business modules from page structure (e.g., via headings/sections).
 6. Validate: Check for success/failure, errors, expected responses.
 - **Report Generation**:
-- Use the fixed template in references/test_report_template.md.
+- Use the fixed template in ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/references/test_report_template.md.
 - Fill in sections dynamically: Overview, Module-wise results (API/Function, Test Case, Result, Notes).
 - Output as Markdown for consistency.
 - Save to project root's testing-report directory with timestamped filename.
@@ -87,7 +89,7 @@ This skill automates integration testing in a browser environment for web pages 
 - “浏览器自动化测试这个页面，所有按钮和 API 都要测”
 
 ## Script Integration
-- Invoke scripts/run_test.py with arguments: python scripts/run_test.py --url=${url} --operation=${op}
+- Invoke ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py with arguments: python ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py --url=${url} --operation=${op}
 - The script handles agent-browser calls, test execution, and template filling.
 
 ## Error Handling
@@ -96,5 +98,5 @@ This skill automates integration testing in a browser environment for web pages 
 - User Interaction: Use Claude's messaging to ask for confirmations (e.g., jumps).
 
 ## References
-- Load references/test_report_template.md when generating reports.
+- Load ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/references/test_report_template.md when generating reports.
 - Additional docs can be added here for advanced usage.
