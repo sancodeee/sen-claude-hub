@@ -350,8 +350,8 @@ class NetworkMonitor:
         解析 API 调用详情
 
         使用改进的逻辑过滤静态资源：
-        1. 检查 URL 路径是否以静态文件扩展名结尾
-        2. 使用正则表达式确保扩展名在路径末尾（而非 API 路径的一部分）
+        1. 优先检查 API 路径指示符（/api/, /v1/, /graphql 等）
+        2. 然后检查静态文件扩展名（但不包括 API 路径中的扩展名）
         3. 保留包含静态扩展名的 API 端点（例如 /api/user.js）
         """
         url = req.get('url', '')
@@ -366,27 +366,47 @@ class NetworkMonitor:
         parsed = urlparse(url)
         path = parsed.path.lower()
 
-        # 静态文件扩展名（仅当扩展名在路径末尾时过滤）
-        # 使用更精确的正则表达式，避免过滤像 /api/user.js 这样的 API 端点
-        import re
-        static_extensions = ('.css', '.js', '.png', '.jpg', '.jpeg',
-                            '.gif', '.svg', '.ico', '.woff', '.woff2',
-                            '.ttf', '.eot', '.otf', '.webp', '.avif')
+        # API 路径指示符（优先检查）
+        api_indicators = ('/api/', '/v1/', '/v2/', '/v3/', '/v4/',
+                          '/graphql', '/rest/', '/rpc/', '/_api/')
 
-        # 检查路径是否以这些扩展名之一结尾（不区分大小写）
-        # 此模式确保扩展名在路径末尾，后面不跟任何内容
+        # 如果路径包含 API 指示符，优先识别为 API
+        if any(indicator in path for indicator in api_indicators):
+            # 提取端点路径
+            endpoint = parsed.path
+            if parsed.query:
+                endpoint += f"?{parsed.query}"
+            return APICall(
+                method=method,
+                endpoint=endpoint,
+                status=req.get('status', 0),
+                timing=req.get('duration', 0)
+            )
+
+        # 静态文件扩展名（仅在非 API 路径时过滤）
+        import re
+        static_extensions = ('.css', '.png', '.jpg', '.jpeg',
+                            '.gif', '.svg', '.ico', '.woff', '.woff2',
+                            '.ttf', '.eot', '.otf', '.webp', '.avif',
+                            '.mp4', '.webm', '.ogg', '.mp3', '.wav')
+
+        # 检查路径是否以这些扩展名之一结尾
         for ext in static_extensions:
-            # 模式匹配：以扩展名结尾的路径，可选地后跟查询/片段
-            # 但不跟另一个路径段（例如 /api/data.json/users）
             pattern = re.escape(ext) + r'$'
             if re.search(pattern, path):
                 return None
 
-        # 额外的启发式规则：如果路径包含 /api/、/v1/、/v2/ 等，则可能是 API
-        # 即使以静态扩展名结尾，也可能是动态端点
-        api_indicators = ('/api/', '/v1/', '/v2/', '/v3/', '/graphql', '/rest/')
-        if any(indicator in path for indicator in api_indicators):
-            pass  # 保留为 API，不过滤
+        # .js 文件特殊处理：仅当不在 API 路径中时过滤
+        if re.search(r'\.js$', path):
+            # 检查是否可能是动态脚本端点（有查询参数或包含关键字）
+            dynamic_keywords = ('endpoint', 'script', 'callback', 'json')
+            if (parsed.query or
+                any(keyword in path for keyword in dynamic_keywords)):
+                # 可能是动态端点，保留
+                pass
+            else:
+                # 静态 JS 文件，过滤
+                return None
 
         # 提取端点路径
         endpoint = parsed.path
@@ -781,6 +801,11 @@ class ElementDiscovery:
         return valid_elements
 
     def discover_all_interactive_elements(self) -> List[InteractiveElement]:
+        """
+        发现所有可交互元素
+        """
+        # 初始化空的页面快照
+        snapshot = {}
 
         js_code = '''
         (() => {
@@ -930,11 +955,18 @@ class ElementDiscovery:
 
         result = self.browser.eval_js(js_code)
         logger.info(f"Element discovery raw result (first 500 chars): {result[:500]}")
+        logger.debug(f"Result type: {type(result).__name__}, length: {len(result)}")
 
         # 3. 解析增强的响应
         try:
             data = json.loads(result)
+            # agent-browser eval 返回的 JSON 字符串可能被额外包裹在引号中
+            # 如果解析结果是字符串，需要再次解析
+            if isinstance(data, str):
+                logger.debug(f"First parse returned string, parsing again...")
+                data = json.loads(data)
             elements_data = data if isinstance(data, list) else []
+            logger.info(f"JSON parsed successfully, data type: {type(data).__name__}, items: {len(elements_data) if isinstance(elements_data, list) else 'not a list'}")
         except json.JSONDecodeError as e:
             logger.error(f"JSON parse error: {e}")
             logger.debug(f"Raw response: {result}")
@@ -967,10 +999,11 @@ class ElementDiscovery:
                 elem = InteractiveElement(**item)
                 valid_elements.append(elem)
                 logger.debug(f"Valid element {i}: {elem.type} - {elem.text[:30] if elem.text else '(no text)'}")
-            except TypeError as e:
+            except Exception as e:
                 invalid_stats['creation_failed'] = invalid_stats.get('creation_failed', 0) + 1
                 if i < 3:
-                    logger.warning(f"Element {i}: InteractiveElement creation failed: {e}")
+                    logger.warning(f"Element {i}: InteractiveElement creation failed: {type(e).__name__}: {e}")
+                    logger.warning(f"Element data: {item}")
 
         # 5. 统计日志
         if invalid_stats:
@@ -1289,7 +1322,25 @@ class SmartFormFiller:
 
             function generateSelector(btn) {{
                 if (btn.id) return "#" + btn.id;
-                if (btn.name) return '[name="' + btn.name + '"]';
+                // Check name uniqueness to avoid selector conflicts
+                if (btn.name) {{
+                    const sameNameCount = document.querySelectorAll('[name="' + btn.name + '"]').length;
+                    if (sameNameCount === 1) {{
+                        return '[name="' + btn.name + '"]';
+                    }}
+                    // name is not unique, try adding form context
+                    const form = btn.closest('form');
+                    if (form) {{
+                        const formId = form.id || (form.className && form.className.split(/\\s+/)[0]);
+                        if (formId) {{
+                            return 'form#' + formId + ' [name="' + btn.name + '"]';
+                        }}
+                    }}
+                    // Last resort: use nth-of-type index
+                    const sameNameEls = document.querySelectorAll('[name="' + btn.name + '"]');
+                    const idx = Array.from(sameNameEls).indexOf(btn);
+                    return '[name="' + btn.name + '"]:nth-of-type(' + (idx + 1) + ')';
+                }}
                 if (btn.className) {{
                     const classes = btn.className.trim().split(/\\s+/);
                     if (classes.length > 0) {{

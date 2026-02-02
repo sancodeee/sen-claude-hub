@@ -47,9 +47,9 @@ class InteractiveElement:
     """Interactive element data class"""
     type: str              # button, link, input, select, checkbox, radio, textarea
     selector: str          # CSS selector or semantic locator
-    text: str              # Element text
-    ref: Optional[str]     # Snapshot reference (@e1, @e2)
     visible: bool          # Whether visible
+    text: str = ''         # Element text - optional for input elements
+    ref: Optional[str] = None     # Snapshot reference (@e1, @e2) - optional for JS discovery
     id: Optional[str] = None
     name: Optional[str] = None
     form_id: Optional[str] = None

@@ -139,23 +139,49 @@ class BrowserManager:
 
         注意：取决于 agent-browser 版本，--json 可能不被支持。
         如果失败需要回退解析，但假设 v4+ 版本支持此功能。
+
+        agent-browser network requests --json 返回格式：
+        {"success":true,"data":{"requests":[...]},"error":null}
         """
         output = self.run_command(['network', 'requests', '--json'])
         if output:
             try:
                 import json
-                return json.loads(output)
-            except json.JSONDecodeError:
-                logger.warning("解析网络请求 JSON 失败")
+                # agent-browser 可能返回被引号包裹的 JSON，需要两次解析
+                data = json.loads(output)
+                if isinstance(data, str):
+                    data = json.loads(data)
+                # 提取 data.requests 字段
+                if isinstance(data, dict) and 'data' in data:
+                    return data.get('data', {}).get('requests', [])
+                elif isinstance(data, list):
+                    return data
+                else:
+                    logger.warning(f"Unexpected network requests format: {type(data).__name__}")
+            except json.JSONDecodeError as e:
+                logger.warning(f"解析网络请求 JSON 失败: {e}")
         return []
 
     def clear_network_requests(self):
         """清空请求历史"""
         self.run_command(['network', 'requests', '--clear'])
 
-    def wait_for_network_idle(self):
-        """等待网络空闲"""
-        self.run_command(['wait', '--load', 'networkidle'])
+    def wait_for_network_idle(self, timeout: int = 30) -> bool:
+        """
+        等待网络空闲
+
+        Args:
+            timeout: 超时时间（秒）
+
+        Returns:
+            bool: True if network idle reached, False if timeout
+        """
+        try:
+            self.run_command(['wait', '--load', 'networkidle'], timeout=timeout)
+            return True
+        except Exception as e:
+            logger.warning(f"Network idle wait timed out or failed: {e}")
+            return False
 
     def find_by_role(self, role: str, name: str = None) -> str:
         """通过角色语义定位元素"""
