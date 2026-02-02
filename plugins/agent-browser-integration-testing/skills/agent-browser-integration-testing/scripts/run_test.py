@@ -8,8 +8,20 @@ import time
 # ================== 路径计算（解决相对路径问题） ==================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))          # scripts/ 目录
 SKILL_DIR = os.path.dirname(SCRIPT_DIR)                           # agent-browser-integration-testing/
-PROJECT_ROOT = os.path.dirname(SKILL_DIR)                         # 项目根目录（假设 skill 在项目根下）
 
+# 查找项目根目录（向上查找包含 .git 或 package.json 的目录）
+def find_project_root(start_dir):
+    current = start_dir
+    for _ in range(5):  # 最多向上查找5层
+        if os.path.exists(os.path.join(current, '.git')) or os.path.exists(os.path.join(current, 'package.json')):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:  # 到达根目录
+            break
+        current = parent
+    return start_dir  # 找不到则返回起始目录
+
+PROJECT_ROOT = find_project_root(SKILL_DIR)
 TEMPLATE_PATH = os.path.join(SKILL_DIR, 'references', 'test_report_template.md')
 REPORT_DIR = os.path.join(PROJECT_ROOT, 'testing-report')
 
@@ -80,13 +92,13 @@ def perform_tests(url, operation):
             _, s1 = run_agent_browser(['click', '#add-button']); op_commands.append("click #add-button")
             clear_input('input[name="name"]')
             _, s2 = run_agent_browser(['type', 'input[name="name"]', 'Test Create']); op_commands.append("type input[name=\"name\"] Test Create")
-            _, s3 = run_agent_browser(['submit', 'form']); op_commands.append("submit form")
+            _, s3 = run_agent_browser(['press', 'Enter']); op_commands.append("press Enter")
             output, s4 = run_agent_browser(['snapshot'])  # 验证用快照
-            status = 'Pass' if s1 and s2 and s3 and 'success' in output.lower() else 'Fail'
+            status = 'Pass' if s1[1] and s2[1] and s3[1] and 'success' in output.lower() else 'Fail'
             details = output
 
         elif op == 'read':
-            output, success = run_agent_browser(['extract', '.loan-result'])
+            output, success = run_agent_browser(['eval', 'document.querySelector(".loan-result")?.textContent || ""'])
             status = 'Pass' if success and output.strip() else 'Fail'
             details = f"提取结果：{output}"
 
@@ -94,19 +106,19 @@ def perform_tests(url, operation):
             _, s1 = run_agent_browser(['click', '#edit-btn']); op_commands.append("click #edit-btn")
             clear_input('input[name="amount"]')
             _, s2 = run_agent_browser(['type', 'input[name="amount"]', '200000']); op_commands.append("type ... 200000")
-            _, s3 = run_agent_browser(['submit']); op_commands.append("submit")
-            status = 'Pass' if s1 and s2 and s3 else 'Fail'
+            _, s3 = run_agent_browser(['press', 'Enter']); op_commands.append("press Enter")
+            status = 'Pass' if s1[1] and s2[1] and s3[1] else 'Fail'
 
         elif op == 'delete':
             _, s1 = run_agent_browser(['click', '#delete-btn']); op_commands.append("click #delete-btn")
-            _, s2 = run_agent_browser(['confirm']); op_commands.append("confirm")
-            status = 'Pass' if s1 and s2 else 'Fail'
+            _, s2 = run_agent_browser(['press', 'Enter']); op_commands.append("press Enter")
+            status = 'Pass' if s1[1] and s2[1] else 'Fail'
 
         results[op] = {'status': status, 'details': details, 'commands': op_commands}
         executed_commands.extend(op_commands)
 
     # 跳转检测
-    jumps_output, _ = run_agent_browser(['extract-links', '--filter', 'a[href], button'])
+    jumps_output, _ = run_agent_browser(['eval', 'Array.from(document.querySelectorAll("a[href]")).map(a => a.href).join("\\n")'])
     jumps = [line.strip() for line in jumps_output.split('\n') if line.strip().startswith('http')][:3]
 
     return results, jumps, executed_commands
@@ -137,6 +149,13 @@ def generate_report(results, url, operation, jumps, executed_commands):
 
     commands_text = "## 所有执行命令\n```bash\n" + "\n".join(executed_commands) + "\n```"
 
+    # 先确定报告文件路径
+    url_slug = "".join(c for c in url if c.isalnum() or c in '-_.')[:40]
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    filename = f"test-{url_slug}-{ts}.md"
+    path = os.path.join(REPORT_DIR, filename)
+    report_path_display = os.path.abspath(path)
+
     report = template \
         .replace('{{URL}}', url) \
         .replace('{{OPERATIONS}}', operation.upper()) \
@@ -145,12 +164,8 @@ def generate_report(results, url, operation, jumps, executed_commands):
         .replace('{{MODULE_SECTIONS}}', module_sections + jumps_text + commands_text) \
         .replace('{{TOTAL}}', str(total)) \
         .replace('{{PASSED}}', str(passed)) \
-        .replace('{{FAILED}}', str(failed))
-
-    url_slug = "".join(c for c in url if c.isalnum() or c in '-_.')[:40]
-    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    filename = f"test-{url_slug}-{ts}.md"
-    path = os.path.join(REPORT_DIR, filename)
+        .replace('{{FAILED}}', str(failed)) \
+        .replace('{{REPORT_PATH}}', report_path_display)
 
     with open(path, 'w', encoding='utf-8') as f:
         f.write(report)
