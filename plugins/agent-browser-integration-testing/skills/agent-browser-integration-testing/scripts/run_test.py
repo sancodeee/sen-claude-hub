@@ -470,7 +470,7 @@ class ElementDiscovery:
                     type: 'button',
                     id: btn.id || null,
                     name: btn.name || null,
-                    text: btn.innerText?.trim() || btn.value || btn.title || '',
+                    text: String(btn.innerText?.trim() || btn.value || btn.title || ''),
                     visible: btn.offsetParent !== null && !btn.disabled,
                     selector: generateSelector(btn, 'button')
                 });
@@ -481,7 +481,7 @@ class ElementDiscovery:
                 elements.push({
                     type: 'link',
                     id: link.id || null,
-                    text: link.innerText?.trim() || link.title || link.href,
+                    text: String(link.innerText?.trim() || link.title || link.href),
                     href: link.href,
                     visible: link.offsetParent !== null,
                     selector: generateSelector(link, 'link')
@@ -513,10 +513,10 @@ class ElementDiscovery:
                         id: input.id || null,
                         name: input.name || null,
                         input_type: input.type || input.tagName.toLowerCase(),
-                        placeholder: input.placeholder || '',
+                        placeholder: String(input.placeholder || ''),
                         visible: input.offsetParent !== null && !input.disabled && !input.readOnly,
                         selector: generateSelector(input, 'input'),
-                        value: input.value || ''
+                        value: String(input.value || '')
                     });
                 });
             });
@@ -528,11 +528,11 @@ class ElementDiscovery:
                     type: 'checkbox',
                     id: cb.id || null,
                     name: cb.name || null,
-                    text: label || cb.title || cb.value || '',
+                    text: String(label || cb.title || cb.value || ''),
                     visible: cb.offsetParent !== null && !cb.disabled,
                     selector: generateSelector(cb, 'checkbox'),
                     checked: cb.checked,
-                    value: cb.value || 'on'
+                    value: String(cb.value || 'on')
                 });
             });
 
@@ -543,43 +543,64 @@ class ElementDiscovery:
                     type: 'radio',
                     id: radio.id || null,
                     name: radio.name || null,
-                    text: label || radio.title || radio.value || '',
+                    text: String(label || radio.title || radio.value || ''),
                     visible: radio.offsetParent !== null && !radio.disabled,
                     selector: generateSelector(radio, 'radio'),
                     checked: radio.checked,
-                    value: radio.value || 'on'
+                    value: String(radio.value || 'on')
                 });
             });
 
             // 发现下拉选择框
             document.querySelectorAll('select').forEach(sel => {
-                const options = Array.from(sel.options).map(opt => opt.value || opt.text);
+                const options = Array.from(sel.options).map(opt => String(opt.value || opt.text));
                 const selectedIndex = sel.selectedIndex;
                 const selectedText = selectedIndex >= 0 ? sel.options[selectedIndex].text : '';
                 elements.push({
                     type: 'select',
                     id: sel.id || null,
                     name: sel.name || null,
-                    text: selectedText || '',
+                    text: String(selectedText || ''),
                     visible: sel.offsetParent !== null && !sel.disabled,
                     selector: generateSelector(sel, 'select'),
                     options: options,
-                    value: sel.value || '',
+                    value: String(sel.value || ''),
                     input_type: 'select-one'
                 });
             });
 
-            return JSON.stringify(elements);
+            // 验证并过滤有效元素
+            const validElements = elements.filter(el => {
+                return el && typeof el === 'object' && el.type && el.selector;
+            });
+
+            return JSON.stringify(validElements);
         })()
         '''
 
         result = self.browser.eval_js(js_code)
+        data = None
         try:
             data = json.loads(result)
-            return [InteractiveElement(**item) for item in data]
         except json.JSONDecodeError:
             logger.warning(f"Failed to parse elements JSON: {result[:200]}")
             return []
+
+        elements = []
+        for item in data:
+            # 添加类型检查，防止无效数据导致 TypeError
+            if not isinstance(item, dict):
+                logger.warning(f"Skipping invalid element data (not a dict): {type(item).__name__}")
+                continue
+            if not item.get('type') or not item.get('selector'):
+                logger.warning(f"Skipping invalid element data (missing type/selector): {item}")
+                continue
+            try:
+                elements.append(InteractiveElement(**item))
+            except TypeError as e:
+                logger.warning(f"TypeError while creating InteractiveElement: {e}, item: {item}")
+                continue
+        return elements
 
     def get_element_risk(self, element: InteractiveElement) -> RiskLevel:
         """
