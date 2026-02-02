@@ -8,9 +8,11 @@ Part of agent-browser-integration-test skill
 Manages agent-browser CLI interactions with thread safety.
 """
 
+import json
 import logging
 import subprocess
 import threading
+import time
 from typing import List
 from models import CommandResult
 
@@ -197,3 +199,61 @@ class BrowserManager:
     def handle_dialog(self, action: str):
         """处理浏览器对话框 (accept/dismiss)"""
         self.run_command(['dialog', action])
+
+    def wait_for_page_ready(self, timeout_ms: int = 30000) -> bool:
+        """
+        等待页面完全就绪（针对 SPA 应用优化）
+
+        检查：
+        1. DOM readyState = complete
+        2. body 元素可见
+        3. 页面内容非空
+
+        Args:
+            timeout_ms: 超时时间（毫秒）
+
+        Returns:
+            bool: 页面是否成功就绪
+        """
+        js_code = '''
+        (() => {
+            if (document.readyState !== 'complete') {
+                return { ready: false, reason: 'DOM not complete', readyState: document.readyState };
+            }
+            if (!document.body || document.body.offsetParent === null) {
+                return { ready: false, reason: 'Body not visible' };
+            }
+            // 检查是否有可交互元素
+            const interactiveCount = document.querySelectorAll(
+                'button, a, input, select, textarea, [role="button"]'
+            ).length;
+            if (interactiveCount === 0) {
+                return { ready: false, reason: 'No interactive elements found' };
+            }
+            return { ready: true, reason: `Page ready with ${interactiveCount} elements` };
+        })()
+        '''
+
+        start_time = time.time()
+        timeout_sec = timeout_ms / 1000
+        poll_interval = 0.5
+
+        while True:
+            result = self.eval_js(js_code)
+            try:
+                status = json.loads(result)
+                if status.get('ready', False):
+                    logger.info(f"Page ready: {status.get('reason')}")
+                    return True
+
+                elapsed = time.time() - start_time
+                if elapsed >= timeout_sec:
+                    logger.error(f"Page ready timeout: {status.get('reason')}")
+                    return False
+
+                logger.debug(f"Waiting for page: {status.get('reason')} ({elapsed:.1f}s)")
+                time.sleep(poll_interval)
+
+            except Exception as e:
+                logger.warning(f"Page ready check error: {e}")
+                time.sleep(poll_interval)

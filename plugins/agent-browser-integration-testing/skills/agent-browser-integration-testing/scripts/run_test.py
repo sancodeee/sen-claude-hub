@@ -429,9 +429,52 @@ class ElementDiscovery:
 
     def __init__(self, browser: BrowserManager):
         self.browser = browser
+        self._last_snapshot = {}
+
+    def get_last_snapshot(self) -> dict:
+        """获取最后一次元素发现时的页面快照"""
+        return self._last_snapshot
 
     def discover_all_interactive_elements(self) -> List[InteractiveElement]:
-        """发现所有可交互元素 - 增强版，支持更多元素类型"""
+        """
+        发现所有可交互元素 - 增强版，支持 SPA 应用
+
+        改进点：
+        1. 等待页面完全就绪（针对 SPA 应用）
+        2. 获取页面状态诊断信息
+        3. 增强元素验证和详细日志
+        4. 提供清晰的统计信息
+        """
+        # 1. 先等待页面稳定（针对 SPA）
+        logger.info("Waiting for page to be fully ready...")
+        if hasattr(self.browser, 'wait_for_page_ready'):
+            if not self.browser.wait_for_page_ready(timeout_ms=30000):
+                logger.warning("Page ready check timed out, proceeding anyway")
+        # 额外等待框架挂载
+        self.browser.wait(2000)
+
+        # 2. 获取页面快照诊断
+        snapshot_js = '''
+        (() => {
+            return {
+                readyState: document.readyState,
+                bodyExists: !!document.body,
+                bodyVisible: document.body && document.body.offsetParent !== null,
+                title: document.title,
+                url: window.location.href,
+                interactiveCount: document.querySelectorAll('button, a, input, select, textarea').length,
+                formCount: document.querySelectorAll('form').length
+            };
+        })()
+        '''
+        snapshot_result = self.browser.eval_js(snapshot_js)
+        snapshot = {}
+        try:
+            snapshot = json.loads(snapshot_result)
+            logger.info(f"Page snapshot: {snapshot}")
+        except json.JSONDecodeError:
+            logger.warning(f"Failed to parse snapshot: {snapshot_result[:200]}")
+
         js_code = '''
         (() => {
             const elements = [];
@@ -579,28 +622,58 @@ class ElementDiscovery:
         '''
 
         result = self.browser.eval_js(js_code)
-        data = None
+        logger.info(f"Element discovery raw result (first 500 chars): {result[:500]}")
+
+        # 3. 解析增强的响应
         try:
             data = json.loads(result)
-        except json.JSONDecodeError:
-            logger.warning(f"Failed to parse elements JSON: {result[:200]}")
+            elements_data = data if isinstance(data, list) else []
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parse error: {e}")
+            logger.debug(f"Raw response: {result}")
             return []
 
-        elements = []
-        for item in data:
-            # 添加类型检查，防止无效数据导致 TypeError
+        # 4. 增强元素验证和详细日志
+        if not isinstance(elements_data, list):
+            logger.error(f"Expected list, got {type(elements_data).__name__}")
+            return []
+
+        logger.info(f"Received {len(elements_data)} items from JavaScript")
+
+        valid_elements = []
+        invalid_stats = {}
+
+        for i, item in enumerate(elements_data):
             if not isinstance(item, dict):
-                logger.warning(f"Skipping invalid element data (not a dict): {type(item).__name__}")
+                invalid_stats['not_dict'] = invalid_stats.get('not_dict', 0) + 1
+                if i < 3:
+                    logger.warning(f"Element {i}: not a dict, type={type(item).__name__}, value={str(item)[:100]}")
                 continue
+
             if not item.get('type') or not item.get('selector'):
-                logger.warning(f"Skipping invalid element data (missing type/selector): {item}")
+                invalid_stats['missing_fields'] = invalid_stats.get('missing_fields', 0) + 1
+                if i < 3:
+                    logger.warning(f"Element {i}: missing required fields: {item}")
                 continue
+
             try:
-                elements.append(InteractiveElement(**item))
+                elem = InteractiveElement(**item)
+                valid_elements.append(elem)
+                logger.debug(f"Valid element {i}: {elem.type} - {elem.text[:30] if elem.text else '(no text)'}")
             except TypeError as e:
-                logger.warning(f"TypeError while creating InteractiveElement: {e}, item: {item}")
-                continue
-        return elements
+                invalid_stats['creation_failed'] = invalid_stats.get('creation_failed', 0) + 1
+                if i < 3:
+                    logger.warning(f"Element {i}: InteractiveElement creation failed: {e}")
+
+        # 5. 统计日志
+        if invalid_stats:
+            logger.warning(f"Invalid element statistics: {invalid_stats}")
+        logger.info(f"Element discovery complete: {len(valid_elements)} valid elements")
+
+        # 6. 保存页面快照供外部使用
+        self._last_snapshot = snapshot
+
+        return valid_elements
 
     def get_element_risk(self, element: InteractiveElement) -> RiskLevel:
         """
@@ -1652,10 +1725,28 @@ class IntegrationTester:
         # 阶段1: 导航到目标页面
         self.report.add_subsection("初始化")
         self.browser.open(self.url)
-        self.browser.wait_for_network_idle()
+
+        # 使用增强的等待机制
+        if hasattr(self.browser, 'wait_for_page_ready'):
+            if not self.browser.wait_for_page_ready(timeout_ms=30000):
+                self.report.add_text("⚠️ 页面加载超时，可能影响元素发现")
+
+        # 额外等待 SPA 框架挂载
+        self.browser.wait(2000)
 
         # 阶段2: 发现所有元素
         self.report.add_subsection("元素发现")
+
+        # 添加页面状态诊断
+        snapshot = discovery.get_last_snapshot()
+        if snapshot:
+            self.report.add_text(f"**页面状态诊断**:")
+            self.report.add_text(f"- ReadyState: {snapshot.get('readyState', 'unknown')}")
+            self.report.add_text(f"- Body可见: {snapshot.get('bodyVisible', False)}")
+            self.report.add_text(f"- 可交互元素数量: {snapshot.get('interactiveCount', 0)}")
+            self.report.add_text(f"- 表单数量: {snapshot.get('formCount', 0)}")
+            self.report.add_text("")
+
         all_elements = discovery.discover_all_interactive_elements()
         visible_elements = [e for e in all_elements if e.visible]
         categorized = discovery.categorize_elements(all_elements)
