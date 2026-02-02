@@ -1,102 +1,73 @@
 ---
 name: agent-browser-integration-testing
 description: |
-  **THIS SKILL IS STRICTLY LIMITED TO AGENT-BROWSER CLI ONLY.**
+  **AI-Driven Browser Testing Toolset**
+  
+  This skill provides a suite of atomic browser automation tools powered by `agent-browser` (CLI). It is designed to be the "hands" and "eyes" for the Agent to perform logic-driven web testing.
 
-  **MANDATORY RULE #1**: For **EVERY SINGLE** browser action — including but not limited to: opening URL, navigation, clicking elements, filling forms, submitting, extracting text, taking screenshots, inspecting network, finding buttons/links/forms, verifying results — **YOU MUST ONLY USE subprocess to call the 'agent-browser' command-line tool**. 
-  **NEVER** call, suggest, fallback to, or even consider using Playwright MCP, chrome-devtools MCP, browserbase, puppeteer, selenium, or ANY other browser automation MCP/tool unless agent-browser binary literally does not exist in PATH (and you must clearly say "agent-browser command not found" in that case).
+  **Modes**:
+  1.  **Inspect** (`inspect`): Returns page structure (inputs, buttons, links) as JSON. Use this first to "see" the page.
+  2.  **Execute** (`run`): Executes a sequence of atomic actions (fill, click, wait, verify) defined by the Agent.
+  3.  **Auto** (`auto`): Runs a heuristic smoke test (best for quick checks).
 
-  **MANDATORY RULE #2**: If agent-browser returns an error, log the exact command and error message, do NOT switch to any MCP.
+  **Workflow for Complex Tests**:
+  1.  Call `inspect` on the URL.
+  2.  Analyze the JSON output to identify target element IDs or names.
+  3.  Construct a JSON action sequence.
+  4.  Call `run` with the action sequence.
+  5.  **Report**: Parse the JSON result and generate a Markdown report for the user (see `references/REPORT_GUIDE.md`).
 
-  **MANDATORY RULE #3**: Do NOT generate any browser-related code yourself (js/python/etc). Do NOT write Playwright/Puppeteer code. Do NOT use MCP function calls for browser tasks.
-
-  Trigger formats (use these exact patterns to invoke):
-  • test <url> [create|read|update|delete|all]
-  • test https://example.com create
-  • test https://demo.app all
-
-  Natural language support (English & Chinese):
-  • run integration tests on https://...
-  • 测试 https://... 的创建功能
-  • 帮我对这个页面做完整集成测试
-  • 浏览器页面集成测试 url是xxx 测 CRUD
-
-  This skill executes python ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py --url=... --operation=... and relies 100% on agent-browser CLI inside the script.
-compatibility: Requires agent-browser CLI installed in PATH and Python 3+. **agent-browser is the ONLY allowed browser automation method**. No Playwright, no chrome-devtools-mcp, no other MCPs.
-metadata:
-  author: sancodeee
-  version: 1.1.0
+compatibility: Requires `agent-browser` CLI and Python 3+.
 ---
 
 ${CLAUDE_PLUGIN_ROOT}/skills/mcp-faster-caller/scripts/call_mcp.py
 
-# Agent Browser Integration Testing Skill – STRICT AGENT-BROWSER ONLY
-
-## 最高优先级强制规则（Claude 必须遵守）
-1. **只能使用 agent-browser CLI** 执行所有浏览器相关操作。
-2. **严禁** 在任何情况下直接或间接调用 Playwright、chrome-devtools、browserbase 或其他任何浏览器 MCP。
-3. 如果 agent-browser 命令不存在或报错，必须在回复中明确写出：
-```doctest
-   【错误】agent-browser 命令未找到或执行失败。
-   命令：agent-browser <实际命令>
-   错误：{完整错误信息}
-   请安装 agent-browser：npm install -g @vercel-labs/agent-browser （或参考官方文档）
-```
-并**停止后续浏览器操作**，不要尝试用其他工具补救。
-4. 所有测试步骤的 agent-browser 调用必须通过 `${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py` 中的 subprocess 执行。
-5. 报告中必须列出**每一步实际执行的 agent-browser 命令**。
+# Agent Browser Integration Testing Skill
 
 ## Overview
-This skill automates integration testing in a browser environment for web pages and APIs. It supports:
-- Command-line style invocation: e.g., "test https://example.com create" to test creation functionalities.
-- Natural language: e.g., "Perform full integration tests on https://example.com, focusing on user management APIs."
-- Testing scopes: create (add/new), read (query/view), update (edit/modify), delete (remove), or all.
-- Comprehensive coverage: APIs, buttons, forms, and links. Follows jumps/links and prompts user for continuation.
-- Output: Fixed-format test report in Markdown, structured by business modules (e.g., User Module, Payment Module).
+This skill transforms the `agent-browser` CLI into a programmable testing agent. Unlike rigid scripts, it exposes atomic capabilities (`inspect`, `run`) that allow the AI to orchestrate complex, logic-dependent testing scenarios while maintaining execution stability.
 
-## Usage Guidelines
-- **Trigger Conditions**: Load this skill when the user mentions browser testing, integration tests, URLs with operations (CRUD), or commands starting with "test".
-- **Input Parsing**:
-- Extract URL from query.
-- Identify operation: create, read, update, delete, all (default to all if unspecified).
-- For natural language, interpret custom requirements (e.g., "focus on login flow").
-- **Dependencies**:
-- agent-browser: Use for all browser interactions (navigation, clicks, API calls simulation).
-- Python: Execute ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py for orchestration and report generation.
-- Avoid heavy tools: Only fall back if agent-browser insufficient (rare).
-- **Testing Process**:
-1. Open browser to URL using agent-browser.
-2. Identify elements: Buttons, forms, links, API endpoints (via network inspection if needed).
-3. Perform tests per operation:
-- Create: Simulate additions (e.g., form submits).
-- Read: Query/view data.
-- Update: Modify existing entries.
-- Delete: Remove items.
-4. Handle jumps: If links/buttons lead to new pages, note them and prompt user: "Do you want to test the jumped page at [new_url]? Yes/No."
-5. Group by modules: Infer business modules from page structure (e.g., via headings/sections).
-6. Validate: Check for success/failure, errors, expected responses.
-- **Report Generation**:
-- Use the fixed template in ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/references/test_report_template.md.
-- Fill in sections dynamically: Overview, Module-wise results (API/Function, Test Case, Result, Notes).
-- Output as Markdown for consistency.
-- Save to project root's testing-report directory with timestamped filename.
+## Commands
 
-## 使用方式（中文支持）
-- 命令触发：test ${url} [create/read/update/delete/all]
-- 中文自然语言示例：
-- “测试 https://example.com 的创建功能”
-- “帮我对这个网址做完整集成测试，包括新增、查询、更新、删除”
-- “浏览器自动化测试这个页面，所有按钮和 API 都要测”
+### 1. Inspect Page
+Analyzes the DOM and returns interactive elements.
+```bash
+python ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py inspect --url "https://example.com/login"
+```
+**Output (JSON)**:
+```json
+{
+  "inputs": ["[text] id=username name=user", "[password] id=pwd"],
+  "buttons": ["[Button] text='Login' id=submit-btn"]
+}
+```
 
-## Script Integration
-- Invoke ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py with arguments: python ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py --url=${url} --operation=${op}
-- The script handles agent-browser calls, test execution, and template filling.
+### 2. Run Custom Steps
+Executes a specific sequence of actions.
+```bash
+python ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py run --url "https://example.com/login" --steps '[
+  {"action": "fill", "target": "#username", "value": "testuser"},
+  {"action": "fill", "target": "#pwd", "value": "123456"},
+  {"action": "click", "target": "#submit-btn"},
+  {"action": "wait", "value": 2},
+  {"action": "verify_text", "value": "Welcome"}
+]'
+```
+**Supported Actions**:
+*   `fill`: `{"action": "fill", "target": "selector", "value": "text"}`
+*   `click`: `{"action": "click", "target": "selector OR text=ButtonName"}`
+*   `wait`: `{"action": "wait", "value": seconds}`
+*   `screenshot`: `{"action": "screenshot"}`
+*   `verify_text`: `{"action": "verify_text", "value": "expected text"}`
 
-## Error Handling
-- If agent-browser not installed: Instruct user to install.
-- Failures: Log in report with details.
-- User Interaction: Use Claude's messaging to ask for confirmations (e.g., jumps).
+### 3. Auto Smoke Test
+Quickly scans and pokes the page (heuristic).
+```bash
+python ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/scripts/run_test.py auto --url "https://example.com"
+```
 
-## References
-- Load ${CLAUDE_PLUGIN_ROOT}/skills/agent-browser-integration-testing/references/test_report_template.md when generating reports.
-- Additional docs can be added here for advanced usage.
+## Best Practices
+*   **Always Inspect First**: Don't guess selectors. Use `inspect` to get ground truth.
+*   **Use `text=` for Buttons**: If IDs are missing/complex, use `text=Submit` for robust clicking.
+*   **Step-by-Step**: For long flows, break them into multiple `run` calls if needed.
+*   **Reporting**: Always summarize the JSON results into a readable table for the user using the format in `references/REPORT_GUIDE.md`.

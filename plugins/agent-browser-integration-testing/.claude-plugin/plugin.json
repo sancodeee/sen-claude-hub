@@ -1,7 +1,7 @@
 {
   "name": "agent-browser-integration-testing",
   "version": "1.0.0",
-  "description": "Browser integration testing skill using agent-browser.",
+  "description": "This skill provides a suite of atomic browser automation tools powered by `agent-browser` (CLI). It is designed to be the \"hands\" and \"eyes\" for the Agent to perform logic-driven web testing.",
   "author": {
     "name": "sen"
   }
