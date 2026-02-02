@@ -70,8 +70,73 @@ def clear_input(ref):
     js = f'document.querySelector("{ref}").value = "";'
     run_agent_browser(['eval', js])
 
+# ================== 截图管理器 ==================
+class ScreenshotManager:
+    """管理测试过程中的截图捕获和存储"""
+
+    def __init__(self, url_slug, timestamp, enabled=True):
+        self.enabled = enabled
+        self.screenshots = []
+        self.timestamp = timestamp
+        self.url_slug = url_slug
+
+        if self.enabled:
+            self.assets_dir = os.path.join(REPORT_DIR, f"test-{url_slug}-{timestamp}_assets")
+            os.makedirs(self.assets_dir, exist_ok=True)
+
+    def capture(self, label, error_context=False):
+        """捕获截图，返回相对路径"""
+        if not self.enabled:
+            return None
+
+        try:
+            seq = len(self.screenshots) + 1
+            filename = f"{seq:02d}_{label}.png"
+            full_path = os.path.join(self.assets_dir, filename)
+
+            output, success = run_agent_browser(['screenshot', full_path], timeout=30)
+
+            if success:
+                rel_path = os.path.relpath(full_path, REPORT_DIR)
+                self.screenshots.append({
+                    'path': rel_path,
+                    'label': label,
+                    'is_error': error_context
+                })
+                print(f"[SCREENSHOT] {filename}")
+                return rel_path
+        except Exception as e:
+            print(f"[SCREENSHOT_ERROR] {str(e)}")
+        return None
+
+    def get_markdown_section(self):
+        """生成截图区域的 Markdown"""
+        if not self.enabled or not self.screenshots:
+            return ""
+
+        md = "## 测试过程截图\n\n"
+
+        # 正常截图（折叠）
+        normal = [s for s in self.screenshots if not s['is_error']]
+        if normal:
+            md += "<details><summary>正常操作截图 ({})</summary>\n\n".format(len(normal))
+            for s in normal:
+                md += f"### {s['label'].replace('_', ' ').title()}\n\n"
+                md += f"![{s['label']}]({s['path']})\n\n"
+            md += "</details>\n\n"
+
+        # 错误截图（展开）
+        errors = [s for s in self.screenshots if s['is_error']]
+        if errors:
+            md += "### ⚠️ 错误现场截图\n\n"
+            for s in errors:
+                md += f"**{s['label'].replace('_', ' ').title()}**\n\n"
+                md += f"![{s['label']}]({s['path']})\n\n"
+
+        return md
+
 # ================== 执行测试（分步调用真实语法） ==================
-def perform_tests(url, operation):
+def perform_tests(url, operation, screenshot_mgr=None):
     results = {}
     executed_commands = []
     ops = [operation.lower()] if operation.lower() != 'all' else ['create', 'read', 'update', 'delete']
@@ -82,13 +147,17 @@ def perform_tests(url, operation):
     if not success:
         return {}, [], executed_commands  # 页面打不开，直接结束
 
+    # 初始加载截图
+    if screenshot_mgr:
+        screenshot_mgr.capture('initial_load')
+
     for op in ops:
         status = 'Fail'
         details = ''
         op_commands = []
 
         if op == 'create':
-            # 示例：假设页面有“新增”按钮和表单
+            # 示例：假设页面有"新增"按钮和表单
             _, s1 = run_agent_browser(['click', '#add-button']); op_commands.append("click #add-button")
             clear_input('input[name="name"]')
             _, s2 = run_agent_browser(['type', 'input[name="name"]', 'Test Create']); op_commands.append("type input[name=\"name\"] Test Create")
@@ -97,10 +166,18 @@ def perform_tests(url, operation):
             status = 'Pass' if s1[1] and s2[1] and s3[1] and 'success' in output.lower() else 'Fail'
             details = output
 
+            # 操作完成截图
+            if screenshot_mgr:
+                screenshot_mgr.capture(f'{op}_after', error_context=(status == 'Fail'))
+
         elif op == 'read':
             output, success = run_agent_browser(['eval', 'document.querySelector(".loan-result")?.textContent || ""'])
             status = 'Pass' if success and output.strip() else 'Fail'
             details = f"提取结果：{output}"
+
+            # 操作完成截图
+            if screenshot_mgr:
+                screenshot_mgr.capture(f'{op}_after', error_context=(status == 'Fail'))
 
         elif op == 'update':
             _, s1 = run_agent_browser(['click', '#edit-btn']); op_commands.append("click #edit-btn")
@@ -109,10 +186,18 @@ def perform_tests(url, operation):
             _, s3 = run_agent_browser(['press', 'Enter']); op_commands.append("press Enter")
             status = 'Pass' if s1[1] and s2[1] and s3[1] else 'Fail'
 
+            # 操作完成截图
+            if screenshot_mgr:
+                screenshot_mgr.capture(f'{op}_after', error_context=(status == 'Fail'))
+
         elif op == 'delete':
             _, s1 = run_agent_browser(['click', '#delete-btn']); op_commands.append("click #delete-btn")
             _, s2 = run_agent_browser(['press', 'Enter']); op_commands.append("press Enter")
             status = 'Pass' if s1[1] and s2[1] else 'Fail'
+
+            # 操作完成截图
+            if screenshot_mgr:
+                screenshot_mgr.capture(f'{op}_after', error_context=(status == 'Fail'))
 
         results[op] = {'status': status, 'details': details, 'commands': op_commands}
         executed_commands.extend(op_commands)
@@ -124,7 +209,7 @@ def perform_tests(url, operation):
     return results, jumps, executed_commands
 
 # ================== 生成报告 ==================
-def generate_report(results, url, operation, jumps, executed_commands):
+def generate_report(results, url, operation, jumps, executed_commands, screenshot_mgr=None):
     try:
         with open(TEMPLATE_PATH, 'r', encoding='utf-8') as f:
             template = f.read()
@@ -149,6 +234,9 @@ def generate_report(results, url, operation, jumps, executed_commands):
 
     commands_text = "## 所有执行命令\n```bash\n" + "\n".join(executed_commands) + "\n```"
 
+    # 截图部分
+    screenshots_section = screenshot_mgr.get_markdown_section() if screenshot_mgr else ""
+
     # 先确定报告文件路径
     url_slug = "".join(c for c in url if c.isalnum() or c in '-_.')[:40]
     ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -162,6 +250,7 @@ def generate_report(results, url, operation, jumps, executed_commands):
         .replace('{{DATE}}', datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) \
         .replace('{{STATUS}}', '全部通过' if failed == 0 else f'失败 {failed}/{total}') \
         .replace('{{MODULE_SECTIONS}}', module_sections + jumps_text + commands_text) \
+        .replace('{{SCREENSHOTS_SECTION}}', screenshots_section) \
         .replace('{{TOTAL}}', str(total)) \
         .replace('{{PASSED}}', str(passed)) \
         .replace('{{FAILED}}', str(failed)) \
@@ -186,11 +275,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--url', required=True)
     parser.add_argument('--operation', default='all')
+    parser.add_argument('--with-screenshots', action='store_true', default=False,
+                       help='启用截图功能（默认: 关闭）')
     args = parser.parse_args()
 
-    print(f"[START] URL: {args.url} | 操作: {args.operation.upper()}")
-    results, jumps, commands = perform_tests(args.url, args.operation)
-    report, path = generate_report(results, args.url, args.operation, jumps, commands)
+    print(f"[START] URL: {args.url} | 操作: {args.operation.upper()} | 截图: {args.with_screenshots}")
+
+    # 初始化截图管理器
+    url_slug = "".join(c for c in args.url if c.isalnum() or c in '-_.')[:40]
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    screenshot_mgr = ScreenshotManager(url_slug, ts, enabled=args.with_screenshots)
+
+    results, jumps, commands = perform_tests(args.url, args.operation, screenshot_mgr)
+    report, path = generate_report(results, args.url, args.operation, jumps, commands, screenshot_mgr)
 
     if path:
         print(f"[DONE] 报告路径：{os.path.abspath(path)}")

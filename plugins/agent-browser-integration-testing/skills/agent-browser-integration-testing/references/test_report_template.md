@@ -7,6 +7,8 @@
 
 {{MODULE_SECTIONS}}
 
+{{SCREENSHOTS_SECTION}}
+
 ## 汇总统计
 - 总测试项：{{TOTAL}}
 - 通过：{{PASSED}}
