@@ -1,7 +1,23 @@
 ---
 name: agent-browser-integration-testing
-description: Performs automated browser integration testing on provided URLs, focusing on API interfaces and page functionalities like create/read/update/delete operations. Use when user invokes commands like "test ${url} [create/read/update/delete/all]" or natural language requests such as "Run integration tests on this URL" or "Test the API and buttons on example.com". Prioritizes agent-browser tool for lightweight testing; generates structured test reports by business modules. Asks user for confirmation on testing jumped pages.
-compatibility: Requires agent-browser command installed, Python 3+ environment. No internet access needed beyond browser interactions.
+description: |
+  Browser integration testing skill using agent-browser.
+
+  Force trigger with exact command format:
+    test <url> [create|read|update|delete|all]
+  Examples:
+    - test https://example.com create
+    - test https://demo.app all
+
+  Also supports natural language (English & Chinese):
+    - "run integration tests on example.com"
+    - "test login flow and buttons"
+    - “测试 https://xxx.com 创建功能”
+    - “帮我对这个页面做集成测试，url是xxx”
+    - “浏览器集成测试，重点测新增、删除操作”
+
+  Prioritizes lightweight agent-browser calls; generates structured reports by modules.
+compatibility: Requires agent-browser CLI installed and Python 3+ environment. Prioritizes agent-browser for testing; avoids heavy tools like Playwright or Chrome DevTools unless necessary.
 metadata:
   author: sancodeee
   version: 1.0.0
@@ -42,6 +58,13 @@ This skill automates integration testing in a browser environment for web pages 
     - Use the fixed template in references/test_report_template.md.
     - Fill in sections dynamically: Overview, Module-wise results (API/Function, Test Case, Result, Notes).
     - Output as Markdown for consistency.
+
+## 使用方式（中文支持）
+- 命令触发：test ${url} [create/read/update/delete/all]
+- 中文自然语言示例：
+    - “测试 https://example.com 的创建功能”
+    - “帮我对这个网址做完整集成测试，包括新增、查询、更新、删除”
+    - “浏览器自动化测试这个页面，所有按钮和 API 都要测”
 
 ## Script Integration
 - Invoke scripts/run_test.py with arguments: python scripts/run_test.py --url=${url} --operation=${op}
