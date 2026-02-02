@@ -1847,17 +1847,33 @@ def main():
     parser.add_argument("operation", nargs="?", default="all",
                       choices=["create", "read", "update", "delete", "all"],
                       help="Test operation to perform")
-    parser.add_argument("--output-dir", default="./test-reports", help="Directory for reports")
+    parser.add_argument("--output-dir", default=None, help="Directory for reports (default: $PWD/test-reports)")
     parser.add_argument("--parallel", action="store_true",
                       help="Enable parallel execution for independent elements (faster but requires parallel_executor.py)")
 
     args = parser.parse_args()
 
+    # Determine output directory:
+    # 1. Use --output-dir if explicitly provided
+    # 2. Use TEST_REPORT_DIR environment variable if set
+    # 3. Default to current working directory + /test-reports
+    if args.output_dir:
+        output_dir = args.output_dir
+    else:
+        import os
+        env_dir = os.environ.get('TEST_REPORT_DIR')
+        if env_dir:
+            output_dir = env_dir
+        else:
+            # Use absolute path from current working directory
+            # This ensures reports go to the user's project directory, not the plugin cache directory
+            output_dir = os.path.join(os.getcwd(), 'test-reports')
+
     # Create TestConfig with environment variable support
     # TestConfig reads environment variables automatically via its field(default_factory=...) definitions
     config = TestConfig()
 
-    tester = IntegrationTester(args.url, args.operation, args.output_dir,
+    tester = IntegrationTester(args.url, args.operation, output_dir,
                                parallel=args.parallel, config=config)
     tester.run()
 

@@ -1,7 +1,7 @@
 ---
 name: agent-browser-integration-testing
 description: Execute comprehensive browser integration testing using agent-browser with full auto-traversal and parallel execution capabilities. Automatically discovers all interactive elements, executes operations with intelligent dependency-aware parallelization, captures API calls, assesses risks, and generates detailed markdown test reports. Use when the user needs to test web applications, perform browser automation testing, validate web functionality, or generate test reports. Triggered by keywords like "浏览器测试", "网页测试", "集成测试", "browser test", "web test", "integration test", or commands like "test <url> [operation]" where operation can be create/read/update/delete/all.
-argument-hint: "<url> [operation] [--parallel] 例如: https://example.com all 或 test https://example.com read"
+argument-hint: "<TARGET_URL> [operation] [--parallel] 例如: test https://your-site.com all 或 test https://your-site.com read"
 user-invocable: true
 allowed-tools: Bash(agent-browser:*), Bash(python3)
 ---
@@ -92,16 +92,16 @@ python3 plugins/agent-browser-integration-testing/skills/agent-browser-integrati
 
 **Examples:**
 ```bash
-# Simple command
-test https://example.com read
-test https://example.com all
+# Simple command (replace TARGET_URL with your actual URL)
+test https://your-site.com read
+test https://your-site.com all
 
 # Direct Python execution
-python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://example.com read
-python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://example.com all
+python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://your-site.com read
+python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://your-site.com all
 
 # Parallel execution for faster testing (v4.1)
-python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://example.com all --parallel
+python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://your-site.com all --parallel
 ```
 
 ## New Features (v4.1.0)
@@ -539,24 +539,24 @@ If a test fails:
 ## Example Test Execution
 
 ```bash
-# User command
-test https://example.com/contact read
+# User command (replace with your actual URL)
+test https://your-site.com/contact read
 
 # Skill execution flow:
-# 1. Parse: URL=https://example.com/contact, OPERATION=read
-# 2. Execute Python script: run_test.py https://example.com/contact read
+# 1. Parse: URL=https://your-site.com/contact, OPERATION=read
+# 2. Execute Python script: run_test.py https://your-site.com/contact read
 # 3. Open browser and navigate
 # 4. Run READ test suite
 # 5. Collect results
-# 6. Generate: ./test-reports/20250130-143000-example.com-read-report.md
+# 6. Generate: ./test-reports/TIMESTAMP-your-site.com-read-report.md
 ```
 
 ```bash
-# NEW: Auto-traversal testing
-test https://example.com all
+# NEW: Auto-traversal testing (replace with your actual URL)
+test https://your-site.com all
 
 # Enhanced execution flow:
-# 1. Parse: URL=https://example.com, OPERATION=all
+# 1. Parse: URL=https://your-site.com, OPERATION=all
 # 2. Execute comprehensive auto-traversal
 # 3. Discover all interactive elements
 # 4. Categorize by risk level
@@ -573,8 +573,8 @@ test https://example.com all
 ```
 
 ```bash
-# NEW in v4.1: Parallel execution for faster testing
-python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://example.com all --parallel
+# NEW in v4.1: Parallel execution for faster testing (replace with your actual URL)
+python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://your-site.com all --parallel
 
 # Parallel execution flow:
 # 1. Discover all elements (same as sequential)
@@ -589,10 +589,20 @@ python3 plugins/agent-browser-integration-testing/skills/agent-browser-integrati
 
 ## Output
 
-Test reports are saved to `./test-reports/` directory with format:
+Test reports are saved to the **current working directory** under `./test-reports/` with format:
 `{timestamp}-{business_abbreviation}-{operation}-report.md`
 
-Example: `20250130-143000-example.com-all-report.md`
+Example: `20250130-143000-your-site.com-all-report.md`
+
+To specify a custom output directory:
+```bash
+# Via argument
+python3 scripts/run_test.py https://your-site.com all --output-dir /custom/path
+
+# Via environment variable
+export TEST_REPORT_DIR=/custom/path
+python3 scripts/run_test.py https://your-site.com all
+```
 
 ## Risk Levels
 
@@ -628,7 +638,7 @@ Example:
 ```bash
 export TEST_MAX_LINKS=20
 export TEST_CONFIRMATION_TIMEOUT=600
-python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://example.com all
+python3 plugins/agent-browser-integration-testing/skills/agent-browser-integration-test/scripts/run_test.py https://your-site.com all
 ```
 
 ## Smart Form Data Generation
@@ -642,6 +652,8 @@ python3 plugins/agent-browser-integration-testing/skills/agent-browser-integrati
 | date | Today's date (ISO format) |
 | number | Random 1-100 |
 | text/default | Test Data {timestamp} |
+
+> **Note**: The `example.com` values above are **test data** used to fill form fields during testing. They do **not** affect the target URL being tested. The actual test URL is always the one you provide in your command.
 
 ---
 
@@ -713,8 +725,8 @@ Parallel mode is most beneficial when:
 **A:** By default, test reports are stored in `./test-reports/` directory. You can customize this using:
 
 ```bash
-# Set via argument
-python3 scripts/run_test.py https://example.com all --output-dir /custom/path
+# Set via argument (replace with your actual URL)
+python3 scripts/run_test.py https://your-site.com all --output-dir /custom/path
 
 # Or set environment variable
 export TEST_REPORT_DIR=/custom/path
@@ -762,7 +774,13 @@ export TEST_CONFIRMATION_TIMEOUT=600
 
 **A:** This skill is designed for agent-browser v4+. The `--json` flag for network requests may not be available in older versions, which would cause API capture to fail.
 
-## Troubleshooting (FAQ)
+### Q8: I see example.com in my test report/data. Was my URL changed to example.com?
+
+**A:** No. The `example.com` domain is only used in **test data generation**:
+- Email fields are filled with `test_{timestamp}@example.com`
+- URL/website fields are filled with `https://example.com`
+
+These are placeholder values used to fill form fields during testing. The actual target URL being tested is always the URL you provide in your command. Check the "测试元数据" section in your test report to confirm which URL was tested.
 
 ### Q1: Where are test reports stored?
 
