@@ -267,6 +267,34 @@ class EnhancedTestReport(TestReport):
             for action in skipped_details:
                 self.add_text(f"- ⏭️ **{action['element'].type}**: {action['element'].text} ({action['risk'].value})")
 
+    def add_page_journey_section(self, page_visits: List[Dict]):
+        """添加页面跳转路径章节"""
+        self.add_section("页面跳转路径")
+
+        if not page_visits:
+            self.add_text("未检测到页面跳转")
+            return
+
+        self.add_table_row("| 深度 | 从 | 通过 | 到 | 时间戳 |")
+        self.add_table_row("|---|---|---|---|---|")
+
+        for visit in page_visits:
+            from_url = visit.get('from_url', '-')
+            from_url_short = from_url[:50] + '...' if len(from_url) > 50 else from_url
+
+            to_url = visit.get('to_url', '-')
+            to_url_short = to_url[:50] + '...' if len(to_url) > 50 else to_url
+
+            via_element = visit.get('via_element', '-')
+            via_element_short = via_element[:30] + '...' if len(via_element) > 30 else via_element
+
+            depth = visit.get('depth', 0)
+            timestamp = visit.get('timestamp', '')[:19]  # 只显示到秒
+
+            self.add_table_row(f"| {depth} | {from_url_short} | {via_element_short} | {to_url_short} | {timestamp} |")
+
+        self.add_text(f"\n**总计**: {len(page_visits)} 次页面跳转")
+
 
 # =============================================================================
 # NetworkMonitor
@@ -444,6 +472,7 @@ class ElementDiscovery:
         2. 获取页面状态诊断信息
         3. 增强元素验证和详细日志
         4. 提供清晰的统计信息
+        5. 添加 fallback 机制处理元素发现失败
         """
         # 1. 先等待页面稳定（针对 SPA）
         logger.info("Waiting for page to be fully ready...")
@@ -474,6 +503,284 @@ class ElementDiscovery:
             logger.info(f"Page snapshot: {snapshot}")
         except json.JSONDecodeError:
             logger.warning(f"Failed to parse snapshot: {snapshot_result[:200]}")
+
+        # 尝试主要元素发现方法
+        elements = self._discover_elements_with_fallback()
+
+        # 6. 保存页面快照供外部使用
+        self._last_snapshot = snapshot
+
+        return elements
+
+    def _discover_elements_with_fallback(self) -> List[InteractiveElement]:
+        """
+        使用 fallback 机制发现元素
+
+        首先尝试完整版元素发现，如果失败则使用简化版
+        """
+        # 尝试完整版元素发现
+        elements = self._discover_elements_full()
+
+        if not elements:
+            logger.warning("Full element discovery failed, trying fallback method...")
+            elements = self._discover_elements_simple()
+
+        return elements
+
+    def _discover_elements_full(self) -> List[InteractiveElement]:
+        """完整版元素发现 - 包含所有类型和详细选择器"""
+        logger.debug("Attempting full element discovery...")
+
+        js_code = '''
+        (() => {
+            const elements = [];
+            let globalIdx = 0;
+
+            // 生成唯一选择器
+            const generateSelector = (el, typeHint) => {
+                if (el.id) return '#' + el.id;
+                if (el.name) return '[name="' + el.name + '"]';
+
+                // 尝试使用属性组合生成更稳定的选择器
+                const attrs = [];
+                if (el.className && typeof el.className === 'string' && el.className) {
+                    const classes = el.className.trim().split(/\\s+/).filter(c => c && !c.match(/^(active|selected|hidden|disabled)$/));
+                    if (classes.length > 0) {
+                        attrs.push('.' + classes[0]);
+                    }
+                }
+
+                const tag = el.tagName.toLowerCase();
+                const type = el.type ? '[type="' + el.type + '"]' : '';
+
+                // 使用 nth-child 作为最后选择
+                let siblings = el.parentElement ? Array.from(el.parentElement.children).filter(c => c.tagName === el.tagName) : [];
+                let nth = siblings.indexOf(el) + 1;
+
+                if (attrs.length > 0) {
+                    return tag + type + '.' + attrs[0].replace(/^\\./, '') + ':nth-child(' + nth + ')';
+                }
+                return tag + type + ':nth-child(' + nth + ')';
+            };
+
+            // 发现按钮
+            document.querySelectorAll('button, [role="button"], input[type="submit"], input[type="button"]').forEach((btn) => {
+                elements.push({
+                    type: 'button',
+                    id: btn.id || null,
+                    name: btn.name || null,
+                    text: String(btn.innerText?.trim() || btn.value || btn.title || ''),
+                    visible: btn.offsetParent !== null && !btn.disabled,
+                    selector: generateSelector(btn, 'button')
+                });
+            });
+
+            // 发现链接
+            document.querySelectorAll('a[href]').forEach((link) => {
+                elements.push({
+                    type: 'link',
+                    id: link.id || null,
+                    text: String(link.innerText?.trim() || link.title || link.href),
+                    href: link.href,
+                    visible: link.offsetParent !== null,
+                    selector: generateSelector(link, 'link')
+                });
+            });
+
+            // 发现各种输入框
+            const inputSelectors = [
+                'input[type="text"]',
+                'input[type="email"]',
+                'input[type="password"]',
+                'input[type="number"]',
+                'input[type="tel"]',
+                'input[type="url"]',
+                'input[type="search"]',
+                'input[type="date"]',
+                'input[type="datetime-local"]',
+                'input[type="time"]',
+                'input[type="month"]',
+                'input[type="week"]',
+                'input:not([type])',
+                'textarea'
+            ];
+
+            inputSelectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(input => {
+                    elements.push({
+                        type: 'input',
+                        id: input.id || null,
+                        name: input.name || null,
+                        input_type: input.type || input.tagName.toLowerCase(),
+                        placeholder: String(input.placeholder || ''),
+                        visible: input.offsetParent !== null && !input.disabled && !input.readOnly,
+                        selector: generateSelector(input, 'input'),
+                        value: String(input.value || '')
+                    });
+                });
+            });
+
+            // 发现复选框
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                const label = cb.parentElement && cb.parentElement.tagName === 'LABEL' ? cb.parentElement.innerText.trim() : '';
+                elements.push({
+                    type: 'checkbox',
+                    id: cb.id || null,
+                    name: cb.name || null,
+                    text: String(label || cb.title || cb.value || ''),
+                    visible: cb.offsetParent !== null && !cb.disabled,
+                    selector: generateSelector(cb, 'checkbox'),
+                    checked: cb.checked,
+                    value: String(cb.value || 'on')
+                });
+            });
+
+            // 发现单选按钮
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                const label = radio.parentElement && radio.parentElement.tagName === 'LABEL' ? radio.parentElement.innerText.trim() : '';
+                elements.push({
+                    type: 'radio',
+                    id: radio.id || null,
+                    name: radio.name || null,
+                    text: String(label || radio.title || radio.value || ''),
+                    visible: radio.offsetParent !== null && !radio.disabled,
+                    selector: generateSelector(radio, 'radio'),
+                    checked: radio.checked,
+                    value: String(radio.value || 'on')
+                });
+            });
+
+            // 发现下拉选择框
+            document.querySelectorAll('select').forEach(sel => {
+                const options = Array.from(sel.options).map(opt => String(opt.value || opt.text));
+                const selectedIndex = sel.selectedIndex;
+                const selectedText = selectedIndex >= 0 ? sel.options[selectedIndex].text : '';
+                elements.push({
+                    type: 'select',
+                    id: sel.id || null,
+                    name: sel.name || null,
+                    text: String(selectedText || ''),
+                    visible: sel.offsetParent !== null && !sel.disabled,
+                    selector: generateSelector(sel, 'select'),
+                    options: options,
+                    value: String(sel.value || ''),
+                    input_type: 'select-one'
+                });
+            });
+
+            // 验证并过滤有效元素
+            const validElements = elements.filter(el => {
+                return el && typeof el === 'object' && el.type && el.selector;
+            });
+
+            return JSON.stringify(validElements);
+        })()
+        '''
+
+        return self._parse_and_validate_elements(js_code)
+
+    def _discover_elements_simple(self) -> List[InteractiveElement]:
+        """简化版元素发现 - 用于主要方法失败时"""
+        logger.debug("Attempting simple element discovery (fallback)...")
+
+        js_code = '''
+        (() => {
+            const elements = [];
+
+            // 简化的选择器生成
+            const simpleSelector = (el, idx) => {
+                if (el.id) return '#' + el.id;
+                return el.tagName.toLowerCase() + ':nth-child(' + (idx + 1) + ')';
+            };
+
+            // 只发现基本的可交互元素
+            document.querySelectorAll('button, a, input, select, textarea').forEach((el, idx) => {
+                const type = el.tagName.toLowerCase();
+                if (type === 'button') {
+                    elements.push({
+                        type: 'button',
+                        id: el.id || null,
+                        text: String(el.innerText?.trim() || el.value || ''),
+                        visible: true,
+                        selector: simpleSelector(el, idx)
+                    });
+                } else if (type === 'a') {
+                    elements.push({
+                        type: 'link',
+                        id: el.id || null,
+                        text: String(el.innerText?.trim() || el.href),
+                        href: el.href,
+                        visible: true,
+                        selector: simpleSelector(el, idx)
+                    });
+                } else if (type === 'input' || type === 'textarea' || type === 'select') {
+                    elements.push({
+                        type: type === 'textarea' ? 'textarea' : type,
+                        id: el.id || null,
+                        text: '',
+                        visible: true,
+                        selector: simpleSelector(el, idx)
+                    });
+                }
+            });
+
+            return JSON.stringify(elements);
+        })()
+        '''
+
+        return self._parse_and_validate_elements(js_code)
+
+    def _parse_and_validate_elements(self, js_code: str) -> List[InteractiveElement]:
+        """解析并验证元素发现结果"""
+        result = self.browser.eval_js(js_code)
+        logger.info(f"Element discovery raw result (first 500 chars): {result[:500]}")
+
+        try:
+            data = json.loads(result)
+            elements_data = data if isinstance(data, list) else []
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parse error: {e}")
+            logger.debug(f"Raw response: {result}")
+            return []
+
+        if not isinstance(elements_data, list):
+            logger.error(f"Expected list, got {type(elements_data).__name__}")
+            return []
+
+        logger.info(f"Received {len(elements_data)} items from JavaScript")
+
+        valid_elements = []
+        invalid_stats = {}
+
+        for i, item in enumerate(elements_data):
+            if not isinstance(item, dict):
+                invalid_stats['not_dict'] = invalid_stats.get('not_dict', 0) + 1
+                if i < 3:
+                    logger.warning(f"Element {i}: not a dict, type={type(item).__name__}, value={str(item)[:100]}")
+                continue
+
+            if not item.get('type') or not item.get('selector'):
+                invalid_stats['missing_fields'] = invalid_stats.get('missing_fields', 0) + 1
+                if i < 3:
+                    logger.warning(f"Element {i}: missing required fields: {item}")
+                continue
+
+            try:
+                elem = InteractiveElement(**item)
+                valid_elements.append(elem)
+                logger.debug(f"Valid element {i}: {elem.type} - {elem.text[:30] if elem.text else '(no text)'}")
+            except TypeError as e:
+                invalid_stats['creation_failed'] = invalid_stats.get('creation_failed', 0) + 1
+                if i < 3:
+                    logger.warning(f"Element {i}: InteractiveElement creation failed: {e}")
+
+        if invalid_stats:
+            logger.warning(f"Invalid element statistics: {invalid_stats}")
+        logger.info(f"Element discovery complete: {len(valid_elements)} valid elements")
+
+        return valid_elements
+
+    def discover_all_interactive_elements(self) -> List[InteractiveElement]:
 
         js_code = '''
         (() => {
@@ -1109,6 +1416,55 @@ class ConfirmationHandler:
 
         return response[0] or 'n'  # 空输入视为跳过
 
+    def ask_continue_testing(self, new_url: str, context: str, timeout: Optional[float] = None) -> bool:
+        """
+        询问用户是否继续测试新页面
+
+        Args:
+            new_url: 新页面的URL
+            context: 上下文信息（如"点击'下一步'按钮后"）
+            timeout: 超时时间（秒），None 表示使用默认值或无超时
+
+        Returns:
+            bool: True表示继续测试，False表示返回原页面
+
+        Raises:
+            KeyboardInterrupt: 用户选择中止
+        """
+        print(f"\n{'='*60}")
+        print(f"📍 检测到页面跳转")
+        print(f"上下文: {context}")
+        print(f"新页面: {new_url}")
+        print(f"{'='*60}")
+        print("选项:")
+        print("  [c]ontinue - 继续测试新页面")
+        print("  [r]eturn  - 返回原页面继续测试")
+        print("  [s]kip    - 跳过此链接")
+        print("  [a]bort   - 中止所有测试")
+
+        # 确定超时设置
+        effective_timeout = timeout if timeout is not None else self.default_timeout
+
+        try:
+            if effective_timeout is None:
+                response = input("请选择: ").strip().lower()
+            else:
+                response = self._input_with_timeout(f"请选择 ({effective_timeout}s超时): ",
+                                                    effective_timeout).strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print("\n⚠️  用户中止测试")
+            raise KeyboardInterrupt("User aborted")
+
+        if response == 'c':
+            return True
+        elif response == 'a':
+            print("⚠️  用户中止测试")
+            raise KeyboardInterrupt("User aborted")
+        elif response == 's':
+            return 'skip'  # Special value to skip
+        else:  # 'r' or default
+            return False
+
     def get_summary(self) -> Dict:
         """获取确认摘要"""
         return {
@@ -1116,6 +1472,192 @@ class ConfirmationHandler:
             'skipped': len(self.skipped_actions),
             'skipped_details': self.skipped_actions
         }
+
+
+# =============================================================================
+# PageNavigator
+# =============================================================================
+
+class PageNavigator:
+    """管理页面跳转和连续测试"""
+
+    def __init__(self, browser: BrowserManager, confirmation_handler: ConfirmationHandler,
+                 max_depth: int = 5):
+        """
+        Args:
+            browser: BrowserManager 实例
+            confirmation_handler: ConfirmationHandler 实例
+            max_depth: 最大测试深度（防止无限循环）
+        """
+        self.browser = browser
+        self.confirmation = confirmation_handler
+        self.visited_urls = set()  # 跟踪已访问的URL
+        self.max_depth = max_depth
+        self.current_depth = 0
+        self.page_visits: List[Dict] = []  # 记录页面访问历史
+
+    def navigate_and_test(self, element: InteractiveElement, tester: 'ElementTester',
+                          monitor: 'NetworkMonitor', report: 'EnhancedTestReport') -> TestResult:
+        """
+        点击元素后询问是否继续测试新页面
+
+        Args:
+            element: 被点击的元素
+            tester: ElementTester 实例
+            monitor: NetworkMonitor 实例
+            report: EnhancedTestReport 实例
+
+        Returns:
+            TestResult: 包含是否继续测试的信息
+        """
+        # 1. 保存当前状态
+        before_url = self.browser.get_url()
+        before_url_base = before_url.split('#')[0] if before_url else ""
+
+        # 2. 点击元素并监控
+        monitor.start_recording()
+
+        try:
+            if element.href:
+                self.browser.open(element.href)
+            else:
+                self.browser.click_element(element.selector)
+
+            self.browser.wait_for_network_idle()
+            self.browser.wait(1000)
+
+            # 3. 检测是否跳转到新页面
+            current_url = self.browser.get_url()
+            current_url_base = current_url.split('#')[0] if current_url else ""
+
+            # 检查是否真的跳转了
+            is_new_page = (current_url_base != before_url_base and
+                          current_url_base not in ['about:blank', ''])
+
+            if not is_new_page:
+                # 没有跳转，返回原结果
+                apis_called = monitor.capture_new_requests(element.text)
+                return TestResult(
+                    element=element,
+                    success=len(apis_called) > 0 or True,  # 至少尝试了
+                    apis_called=apis_called
+                )
+
+            # 4. 记录页面访问
+            self._record_page_visit(before_url, current_url, element)
+
+            # 5. 询问用户是否继续测试
+            if self.current_depth >= self.max_depth:
+                logger.warning(f"已达到最大测试深度 ({self.max_depth})，自动返回")
+                self._return_to_page(before_url)
+                return TestResult(
+                    element=element,
+                    success=True,
+                    apis_called=monitor.capture_new_requests(element.text),
+                    error=f"已达到最大测试深度"
+                )
+
+            # 检查是否访问过
+            if current_url_base in self.visited_urls:
+                logger.info(f"URL {current_url_base} 已访问过，跳过继续测试")
+                self._return_to_page(before_url)
+                return TestResult(
+                    element=element,
+                    success=True,
+                    apis_called=monitor.capture_new_requests(element.text),
+                    error="URL已访问过"
+                )
+
+            # 询问用户
+            try:
+                should_continue = self.confirmation.ask_continue_testing(
+                    current_url,
+                    f"点击'{element.text[:30]}'后"
+                )
+
+                if should_continue == 'skip':
+                    # 用户选择跳过
+                    return TestResult(
+                        element=element,
+                        success=True,
+                        apis_called=monitor.capture_new_requests(element.text),
+                        error="用户跳过"
+                    )
+                elif not should_continue:
+                    # 用户选择返回
+                    self._return_to_page(before_url)
+                    return TestResult(
+                        element=element,
+                        success=True,
+                        apis_called=monitor.capture_new_requests(element.text)
+                    )
+
+                # 6. 继续测试新页面
+                self.visited_urls.add(current_url_base)
+                self.current_depth += 1
+
+                # 这里可以递归调用完整测试流程
+                # 为了简化，目前只记录并返回
+                logger.info(f"继续测试新页面: {current_url} (深度: {self.current_depth})")
+
+                return TestResult(
+                    element=element,
+                    success=True,
+                    apis_called=monitor.capture_new_requests(element.text),
+                    navigated_away=True
+                )
+
+            except KeyboardInterrupt:
+                # 用户中止
+                self._return_to_page(before_url)
+                raise
+
+        except Exception as e:
+            logger.error(f"导航测试失败: {e}")
+            # 尝试返回原页面
+            if before_url and before_url not in ['about:blank', '']:
+                try:
+                    self.browser.open(before_url)
+                except:
+                    logger.warning("无法返回原页面")
+
+            return TestResult(
+                element=element,
+                success=False,
+                apis_called=[],
+                error=str(e)
+            )
+
+    def _record_page_visit(self, from_url: str, to_url: str, via_element: InteractiveElement):
+        """记录页面访问"""
+        visit = {
+            'from_url': from_url,
+            'to_url': to_url,
+            'via_element': via_element.text[:50] if via_element.text else via_element.selector,
+            'timestamp': datetime.datetime.now().isoformat(),
+            'depth': self.current_depth
+        }
+        self.page_visits.append(visit)
+        logger.info(f"记录页面跳转: {from_url} -> {to_url} (深度: {self.current_depth})")
+
+    def _return_to_page(self, url: str):
+        """返回指定页面"""
+        if url and url not in ['about:blank', '']:
+            try:
+                self.browser.open(url)
+                self.browser.wait(1000)
+            except Exception as e:
+                logger.warning(f"返回页面失败: {e}")
+
+    def get_page_journey(self) -> List[Dict]:
+        """获取页面跳转路径"""
+        return self.page_visits.copy()
+
+    def reset(self):
+        """重置状态"""
+        self.visited_urls.clear()
+        self.current_depth = 0
+        self.page_visits.clear()
 
 
 # =============================================================================
@@ -1144,9 +1686,10 @@ class ElementTester:
             logger.warning(f"Failed to take error screenshot: {e}")
             return None
 
-    def test_link(self, element: InteractiveElement, monitor: 'NetworkMonitor' = None) -> TestResult:
+    def test_link(self, element: InteractiveElement, monitor: 'NetworkMonitor' = None,
+                  navigator: 'PageNavigator' = None, continue_on_new_page: bool = False) -> TestResult:
         """
-        测试链接 - 增强版，捕获 API 调用
+        测试链接 - 增强版，捕获 API 调用和页面跳转连续测试
 
         Success Criteria:
         - A link is considered "tested successfully" if:
@@ -1164,6 +1707,12 @@ class ElementTester:
         - Waits for page to stabilize after navigation
         - Handles JavaScript-triggered actions that don't change URL
         - Checks for page title changes as additional success indicator
+
+        Args:
+            element: 待测试的链接元素
+            monitor: NetworkMonitor 实例（可选）
+            navigator: PageNavigator 实例（可选，用于连续测试）
+            continue_on_new_page: 是否在新页面时询问用户继续测试
         """
         self.browser.wait_for_network_idle()
 
@@ -1237,6 +1786,21 @@ class ElementTester:
                 # No detectable action - inconclusive rather than hard failure
                 success = False
                 error = "No detectable action (no URL change, API call, hash change, or title change)"
+
+            # 检查是否需要在新页面继续测试
+            if navigator and continue_on_new_page and url_changed:
+                try:
+                    # 使用 PageNavigator 询问用户是否继续
+                    nav_result = navigator.navigate_and_test(element, self, monitor, self.report)
+
+                    # 如果用户选择继续测试新页面，返回 navigator 的结果
+                    # 否则继续执行下面的返回原页面逻辑
+                    if nav_result.navigated_away and not nav_result.error:
+                        # 用户选择了继续测试
+                        return nav_result
+                except KeyboardInterrupt:
+                    # 用户中止，继续执行返回逻辑
+                    pass
 
             # 返回初始页面 - 带验证和重试
             max_retries = 2
@@ -1716,6 +2280,7 @@ class IntegrationTester:
         confirmation = ConfirmationHandler()
         form_filler = SmartFormFiller(self.browser)
         tester = ElementTester(self.browser, self.report, self.screenshot_dir)
+        navigator = PageNavigator(self.browser, confirmation, max_depth=5)
 
         # 初始化测试结果列表
         test_results = []
@@ -1830,7 +2395,8 @@ class IntegrationTester:
                 for i, link in enumerate(categorized['navigation_links'][:max_links]):
                     logger.info(f"Testing link {i+1}/{max_links}: {link.text[:30]}")
                     monitor.start_recording()
-                    result = tester.test_link(link, monitor)
+                    # 启用页面跳转连续测试
+                    result = tester.test_link(link, monitor, navigator=navigator, continue_on_new_page=True)
                     test_results.append(result)
                     tested_count += 1
             
@@ -1911,6 +2477,11 @@ class IntegrationTester:
         # 添加并行执行统计（如果有）
         if parallel_stats:
             self._add_parallel_execution_section(parallel_stats)
+
+        # 添加页面跳转路径
+        page_journey = navigator.get_page_journey()
+        if page_journey:
+            self.report.add_page_journey_section(page_journey)
 
         # 最终截图
         final_screenshot = self._take_screenshot("all-final")

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional
 import os
+import datetime
 
 
 # =============================================================================
@@ -102,6 +103,17 @@ class CommandResult:
         """Create a timeout result"""
         return cls(success=False, output="",
                    error=f"Command timed out: {command}", timed_out=True)
+
+
+@dataclass
+class PageVisit:
+    """记录页面访问历史"""
+    url: str                              # 当前页面 URL
+    from_url: Optional[str] = None        # 从哪个页面跳转过来
+    via_element: Optional[str] = None     # 通过哪个元素跳转
+    timestamp: str = field(default_factory=lambda: datetime.datetime.now().isoformat())
+    depth: int = 0                        # 测试深度
+    tested: bool = False                  # 是否进行了完整测试
 
 
 @dataclass

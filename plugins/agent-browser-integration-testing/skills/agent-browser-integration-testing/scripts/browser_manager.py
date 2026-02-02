@@ -202,12 +202,16 @@ class BrowserManager:
 
     def wait_for_page_ready(self, timeout_ms: int = 30000) -> bool:
         """
-        等待页面完全就绪（针对 SPA 应用优化）
+        等待页面完全就绪（针对 SPA 应用优化 - 放宽版本）
 
         检查：
         1. DOM readyState = complete
-        2. body 元素可见
+        2. 可交互元素存在（放宽 body 可见性检查）
         3. 页面内容非空
+
+        改进点：
+        - 放宽 body 可见性检查，某些 SPA 应用可能隐藏 body 但元素仍然可交互
+        - 只要有可交互元素就认为页面可用
 
         Args:
             timeout_ms: 超时时间（毫秒）
@@ -220,16 +224,25 @@ class BrowserManager:
             if (document.readyState !== 'complete') {
                 return { ready: false, reason: 'DOM not complete', readyState: document.readyState };
             }
-            if (!document.body || document.body.offsetParent === null) {
-                return { ready: false, reason: 'Body not visible' };
+            if (!document.body) {
+                return { ready: false, reason: 'Body element does not exist' };
             }
-            // 检查是否有可交互元素
+
+            // 检查是否有可交互元素（放宽 body 可见性检查）
             const interactiveCount = document.querySelectorAll(
                 'button, a, input, select, textarea, [role="button"]'
             ).length;
             if (interactiveCount === 0) {
                 return { ready: false, reason: 'No interactive elements found' };
             }
+
+            // 检查 body 可见性但不阻止测试
+            const bodyVisible = document.body.offsetParent !== null;
+            if (!bodyVisible) {
+                // 发出警告但继续（某些 SPA 应用隐藏 body）
+                return { ready: true, reason: `Page ready with ${interactiveCount} elements (body hidden but interactive)` };
+            }
+
             return { ready: true, reason: `Page ready with ${interactiveCount} elements` };
         })()
         '''
