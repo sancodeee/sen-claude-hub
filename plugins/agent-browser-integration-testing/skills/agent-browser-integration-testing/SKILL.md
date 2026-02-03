@@ -20,8 +20,6 @@ description: |
 compatibility: Requires `agent-browser` CLI and Python 3+.
 ---
 
-${CLAUDE_PLUGIN_ROOT}/skills/mcp-faster-caller/scripts/call_mcp.py
-
 # Agent Browser Integration Testing Skill
 
 ## Overview
