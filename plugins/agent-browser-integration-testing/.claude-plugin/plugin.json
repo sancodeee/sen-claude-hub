@@ -1,7 +1,7 @@
 {
   "name": "agent-browser-integration-testing",
   "version": "1.0.0",
-  "description": "This skill provides a suite of atomic browser automation tools powered by `agent-browser` (CLI). It is designed to be the \"hands\" and \"eyes\" for the Agent to perform logic-driven web testing.",
+  "description": "This skill provides atomic browser automation tools driven by the agent - browser CLI. Serving as the \"eyes\" and \"hands\" of the AI Agent, it conducts logic - driven web function integration tests through a snapshot + ref workflow, featuring high reliability and efficiency.",
   "author": {
     "name": "sen"
   }
