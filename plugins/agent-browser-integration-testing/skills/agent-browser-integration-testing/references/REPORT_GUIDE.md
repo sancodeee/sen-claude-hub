@@ -46,7 +46,56 @@
 - 状态使用 ✅（成功）或 ❌（失败）
 - 详情列中包含关键结果或完整错误信息
 
-### 4. 证据（Evidence）
+### 4. 网络交互审计（Network Interaction Audit）
+
+> **说明**：此部分**必须**列出测试过程中触发的所有关键 API 接口调用（XHR/Fetch）。忽略图片、CSS、JS 等静态资源请求。
+
+#### 4.1 接口调用概览
+
+| Method | 接口路径 (Path Only)          | 状态码 | 耗时 (ms) | 结果判定 |
+|--------|-------------------------------|--------|-----------|----------|
+| POST   | /api/v1/auth/login            | 200    | 450       | ✅ 成功   |
+| GET    | /api/v1/user/profile          | 200    | 120       | ✅ 成功   |
+| POST   | /api/v1/orders/create         | 400    | 85        | ❌ 失败   |
+| GET    | /api/v1/notifications         | 500    | 1200      | ❌ 异常   |
+
+#### 4.2 异常/关键接口详情
+
+对于**所有失败的接口**（非 2xx）以及**关键业务接口**（如登录、提交订单），必须在下方提供详细的请求与响应信息（使用折叠块）：
+
+<details>
+<summary>❌ <b>POST /api/v1/orders/create (Status: 400)</b></summary>
+
+**Request Payload:**
+```json
+{
+  "productId": 123,
+  "quantity": -1
+}
+```
+
+**Response Body:**
+```json
+{
+  "error": "Bad Request",
+  "message": "Quantity must be positive"
+}
+```
+</details>
+
+<details>
+<summary>✅ <b>POST /api/v1/auth/login (Status: 200)</b></summary>
+
+**Response Body (部分):**
+```json
+{
+  "token": "eyJhbG...",
+  "user": { "id": 101, "role": "admin" }
+}
+```
+</details>
+
+### 5. 证据（Evidence）
 
 - **截图**：
   > **重要**：必须使用 Markdown 图片语法 (`![alt text](path)`) 直接嵌入截图，**严禁**只列出文件名或路径。确保图片能在报告中直接渲染展示。
@@ -62,7 +111,7 @@
 - **最终 URL**： [测试结束时的当前 URL]
 - **关键快照摘录**（可选但强烈推荐）：列出最后一次 snapshot 中最重要的几个 ref 及其描述
 
-### 5. 建议（Recommendations）（新增必填部分）
+### 6. 建议（Recommendations）（新增必填部分）
 
 - [如果通过]：建议下一步功能测试点或生产环境监控建议
 - [如果失败]：明确的重现步骤、可能的根本原因（如网络问题、动态加载、反爬虫机制）、修复建议

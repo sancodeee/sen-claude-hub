@@ -10,12 +10,18 @@ description: |
   - 填写复杂表单并验证提交结果。
   - 检查页面跳转逻辑和关键元素状态。
 
-  **核心作业流程 (SOP)**：
-  1. **Open**: 打开目标 URL。
-  2. **Snapshot**: 获取当前页面交互元素的唯一引用（ref，如 @e1）。
-  3. **Action**: 使用 ref 执行原子操作（Click/Fill）。
-  4. **Wait & Re-Snapshot (关键)**：任何导致页面变化的操作（弹窗、跳转、下拉展开）后，**必须**等待并重新快照以获取新的有效 ref。**严禁盲目连续操作。**
-  5. **Report**: 测试完成后，**必须**依据 `references/REPORT_GUIDE.md` 生成包含截图证据的专业测试报告。
+  **核心作业流程 (SOP - 渐进式报告)**：
+  1. **Init**: 测试开始时，**立即**在 `/testing-report` 下创建报告文件（如 `report-[项目名]-[时间].md`），并写入目标 URL 和开始时间。
+  2. **Open**: 打开目标 URL。
+  3. **Loop (循环执行)**:
+     - **Snapshot**: 获取 ref。
+     - **Action**: 执行操作。
+     - **Wait & Re-Snapshot**: 处理动态变化（严禁盲目连续操作）。
+     - **Audit**: 运行 `network requests` 捕获关键 API 数据。
+     - **Record**: **立即**将本步骤的“操作日志”、“截图路径”和“API 状态”追加写入报告文件。**切勿等到最后才回忆。**
+  4. **Finalize**: 测试结束时，统计总耗时和成功率，完善报告摘要和建议，整体检查确认报告内容无误后，输出最终版本。
+
+  **交付标准**：必须严格遵循 `references/REPORT_GUIDE.md` 的格式要求。
 
 compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser），详细的安装步骤和故障排除请参考 [`references/AGENT_BROWSER_INSTALLATION.md`](references/AGENT_BROWSER_INSTALLATION.md) 安装指南。
 ---
@@ -108,6 +114,17 @@ agent-browser find label "Username" fill "testuser"
 - agent-browser get url
 - agent-browser get title
 
+### 3.5 网络监控（关键）
+
+获取自页面加载以来捕获的所有网络请求数据。建议在关键操作后调用。
+
+```bash
+# 获取请求列表（推荐使用 JSON 以便解析）
+agent-browser network requests --json
+```
+
+**用途**：用于填充测试报告中的“网络交互审计”部分，特别是检查 4xx/5xx 错误。
+
 ### 4. 截图与验证
 
 ```Bash
@@ -130,6 +147,9 @@ agent-browser close
 - **处理动态元素（如下拉框/弹窗）**：
   - ❌ **错误做法**：试图一次性完成（`click @e1 + click @e2`）。
   - ✅ **正确做法**：分步执行（点击 @e1 -> wait -> **snapshot** -> 点击新生成的 @ref）。
+- **渐进式记录（Progressive Reporting）**：
+  - ❌ **错误**：做完所有测试步骤后，凭记忆一次性写报告。
+  - ✅ **正确**：每做完一步（如登录成功），立刻将截图和 API 结果写入报告文件。这样即使中途崩溃，数据也不会丢失。
 - **报告生成**：将快照、动作结果和截图汇总为可读的Markdown文件，保存到用户所在项目根目录的`/testing-report`目录下（**强制**务必遵循
   `references/REPORT_GUIDE.md` 中的格式和要求）。
 
