@@ -23,6 +23,7 @@
 ### 1. 全局安装 agent-browser
 
 ```bash
+# 推荐使用
 npm install -g agent-browser
 ```
 
