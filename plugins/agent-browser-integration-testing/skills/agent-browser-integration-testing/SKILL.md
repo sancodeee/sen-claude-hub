@@ -34,7 +34,7 @@ compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser）�
 
 ## 技能概述
 
-本技能让Agent-browser通过精确的原子命令控制浏览器。它采用可访问性树快照机制，为交互元素分配稳定的临时ref，即使在动态页面上也能确保元素定位的可靠性。
+本技能让Agent-browser通过精确的原子命令控制浏览器。它采用可访问性树快照机制，为交互元素分配稳定的临时ref，即使在动态页面上也能确保元素定位的可靠性，从而能够对页面所有功能进行准确且完善的集成测试。
 
 ## 命令列表
 
@@ -127,7 +127,28 @@ agent-browser find label "Username" fill "testuser"
 agent-browser network requests --json
 ```
 
-**用途**：用于填充测试报告中的“网络交互审计”部分，特别是检查 4xx/5xx 错误。
+**用途**：用于填充测试报告中的"网络交互审计"部分，特别是检查 4xx/5xx 错误。
+
+**输出示例**：
+
+```json
+[
+  {
+    "url": "https://example.com/api/login",
+    "method": "POST",
+    "type": "xhr",
+    "status": 200,
+    "duration": 350
+  },
+  {
+    "url": "https://example.com/static/main.js",
+    "method": "GET",
+    "type": "script",
+    "status": 200,
+    "duration": 120
+  }
+]
+```
 
 ### 4. 截图与验证
 
@@ -149,13 +170,14 @@ agent-browser close
 - **优先使用ref而非CSS/文本**：ref具有确定性和稳定性。
 - **将复杂流程拆分为多个步骤**：便于调试和验证中间状态。
 - **处理动态元素（如下拉框/弹窗）**：
-  - ❌ **错误做法**：试图一次性完成（`click @e1 + click @e2`）。
-  - ✅ **正确做法**：分步执行（点击 @e1 -> wait -> **snapshot** -> 点击新生成的 @ref）。
+    - ❌ **错误做法**：试图一次性完成（`click @e1 + click @e2`）。
+    - ✅ **正确做法**：分步执行（点击 @e1 -> wait -> **snapshot** -> 点击新生成的 @ref）。
 - **渐进式记录（Progressive Reporting）**：
-  - ❌ **错误**：做完所有测试步骤后，凭记忆一次性写报告。
-  - ✅ **正确**：每做完一步（如登录成功），立刻将截图和 API 结果写入报告文件。这样即使中途崩溃，数据也不会丢失。
-- **报告生成**：将快照、动作结果和截图汇总为可读的Markdown文件，保存到用户所在项目根目录的`/testing-report`目录下（**强制**务必遵循
-  `references/REPORT_GUIDE.md` 中的格式和要求）。
+    - ❌ **错误**：做完所有测试步骤后，凭记忆一次性写报告。
+    - ✅ **正确**：每做完一步（如登录成功），立刻将截图和 API 结果写入报告文件，同时参考`references/REPORT_GUIDE.md`
+      验证当前填充是否符合指导规范(**强制**)，这样即使中途崩溃，数据也不会丢失。
+- **报告生成**：将快照、动作结果和截图汇总为可读的Markdown文件，保存到用户所在项目根目录的`/testing-report`目录下（**强制**
+  务必遵循`references/REPORT_GUIDE.md` 中的格式和要求）。
 
 **示例报告模板**：
 ***强制且必须参考`references/REPORT_GUIDE.md` 中的格式和要求为用户生成完善且符合要求的测试报告Markdown文件，方便用户归档和分享
