@@ -101,7 +101,7 @@ agent-browser wait --load networkidle
 agent-browser screenshot after-login.png
 ```
 
-**语义定位（无ref时的备选方案，**ref失败后强制尝试**）**：
+**语义定位（无ref时的备选方案，**ref操作失败后强制尝试备选方案**）**：
 
 ```Bash
 agent-browser find text "Login" click
