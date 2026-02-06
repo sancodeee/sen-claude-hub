@@ -36,6 +36,10 @@ compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser）�
 
 ## 命令列表
 
+> **快速导航**：
+> - 常用命令 → 见下方各小节
+> - 下拉框操作 → [3.5 下拉框操作专项](#35-下拉框操作专项) 或 [完整指南](references/AGENT-BROWSER-DROPDOWN-GUIDE.md)
+
 ### 1. 打开页面
 
 打开新的浏览器会话并导航到指定URL。
@@ -108,7 +112,7 @@ agent-browser snapshot -i
 agent-browser find text "Please select" click
 agent-browser find role button click --name "Submit"
 agent-browser find label "Email" fill "user@test.com"
-agent-browser find placeholder "Search" type "query"
+agent-browser find placeholder "Search" fill "query"
 agent-browser find first ".item" click
 agent-browser find nth 2 ".option" click
 ```
@@ -168,7 +172,23 @@ agent-browser find nth 2 ".option" click
 - agent-browser get title
 - agent-browser --help（未知操作查询命令，针对未知操作的命令进行查询）
 
-### 3.5 网络监控（关键）
+#### 3.5 下拉框操作专项
+
+下拉框是网页测试中的常见复杂交互，分为**原生下拉框**和**自定义下拉框组件**两种类型。
+
+**快速决策**：
+```bash
+# 步骤1：识别类型
+agent-browser snapshot -i
+
+# 步骤2：根据类型选择操作
+原生下拉框（看到 combobox/option）→ agent-browser select @e8 "值"
+自定义下拉框（只有触发器）→ 参考[下拉框操作完整指南](references/AGENT-BROWSER-DROPDOWN-GUIDE.md)
+```
+
+> **详细指南**：遇到复杂下拉框问题时，请查阅 [`references/AGENT-BROWSER-DROPDOWN-GUIDE.md`](references/AGENT-BROWSER-DROPDOWN-GUIDE.md) 获取完整的操作指南、示例脚本和故障排查方法。
+
+### 4. 网络监控（关键）
 
 获取自页面加载以来捕获的所有网络请求数据。建议在关键操作后调用。
 
@@ -199,14 +219,14 @@ agent-browser network requests --json
 ]
 ```
 
-### 4. 截图与验证
+### 5. 截图与验证
 
 ```Bash
 agent-browser screenshot result.png --full
-agent-browser get text body > page-content.txt
+agent-browser get text "body" > page-content.txt
 ```
 
-### 5. 关闭会话
+### 6. 关闭会话
 
 ```Bash
 agent-browser close
@@ -221,6 +241,7 @@ agent-browser close
 - **处理动态元素（如下拉框/弹窗）**：
     - ❌ **错误做法**：试图一次性完成（`click @e1 + click @e2`）。
     - ✅ **正确做法**：分步执行（点击 @e1 -> wait -> **snapshot** -> 点击新生成的 @ref）。
+    - 📖 **下拉框专项**：下拉框操作有专门的[完整指南](references/AGENT-BROWSER-DROPDOWN-GUIDE.md)，涵盖原生/自定义下拉框的识别、操作和故障排查。
 - **渐进式记录（Progressive Reporting）**：
     - ❌ **错误**：做完所有测试步骤后，凭记忆一次性写报告。
     - ✅ **正确**：每做完一步（如登录成功），立刻将截图和 API 结果写入报告文件，同时参考`references/REPORT_GUIDE.md`
