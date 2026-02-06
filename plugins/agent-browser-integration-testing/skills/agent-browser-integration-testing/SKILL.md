@@ -2,31 +2,8 @@
 name: agent-browser-integration-testing
 description: |
   **网页自动化与端到端集成测试专家 (Web E2E Testing Expert)**
-
-  本技能使具备专业的浏览器测试能力。你将通过 `agent-browser` CLI 进行由逻辑驱动的、原子级的网页功能验证。
-
-  **适用场景**：
-  - 验证用户旅程（如：注册、登录、购物车结算）。
-  - 填写复杂表单并验证提交结果。
-  - 检查页面跳转逻辑和关键元素状态。
-
-  **核心作业流程 (SOP - 渐进式报告)**：
-  1. **Init**: 参考 `references/REPORT_GUIDE.md` 的头部格式，**立即**创建报告文件，写入 Target URL 和 Date。
-  2. **Open**: 打开目标 URL。
-  3. **Loop (循环执行)**:
-     - **Snapshot**: 获取 ref。
-     - **Action**: 执行操作。
-     - **Wait & Re-Snapshot**: 处理动态变化（**严禁盲目连续操作**）。
-     - **Audit**: 运行 `network requests --json`。
-     - **Record**: 依据 `REPORT_GUIDE.md` 要求：
-       - 如有关键发现，及时记录到"**2. 关键发现**"。
-       - 将操作记录追加到 "**3. 执行日志**" 表格。
-       - 将 API 数据追加到 "**4. 网络交互审计**" 表格。
-       - 如有截图，**必须**使用 `![desc](path)` 语法嵌入到"**5. 证据**" 部分。
-  4. **Finalize**: 测试结束时，填充 "**1. 摘要**"、"**2. 关键发现**" 和 "**6. 建议**"，并最终核对格式。
-
-  **交付标准**：必须严格遵循 `references/REPORT_GUIDE.md` 的格式要求。
-
+  本技能使具备专业的浏览器测试能力。你将通过 `agent-browser` CLI 进行由逻辑驱动的、原子级的浏览器网页功能测试验证。
+  **适用场景**: 需使用浏览器进行业务需求或页面功能的集成测试。
 compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser），详细的安装步骤和故障排除请参考 [`references/AGENT_BROWSER_INSTALLATION.md`](references/AGENT_BROWSER_INSTALLATION.md) 安装指南。
 ---
 
@@ -35,6 +12,27 @@ compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser）�
 ## 技能概述
 
 本技能让Agent-browser通过精确的原子命令控制浏览器。它采用可访问性树快照机制，为交互元素分配稳定的临时ref，即使在动态页面上也能确保元素定位的可靠性，从而能够对页面所有功能进行准确且完善的集成测试。
+
+## 核心业务流程
+
+**核心作业流程 (SOP - 渐进式报告)**：
+
+1. **Init**: 参考 `references/REPORT_GUIDE.md` 的头部格式，**立即**创建报告文件，写入 Target URL 和 Date。
+2. **Open**: 打开目标 URL。
+3. **Loop (循环执行)**:
+    - **Snapshot**: 获取 ref。
+    - **Action**: 执行操作。
+    - **Wait & Re-Snapshot**: 处理动态变化（**严禁盲目连续操作**）。
+    - **Audit**: 运行 `network requests --json`。
+    - **Record**: 依据 `REPORT_GUIDE.md` 要求：
+        - 如有关键发现，及时记录到"**2. 关键发现**"。
+        - 将操作记录追加到 "**3. 执行日志**" 表格。
+        - 将 API 数据追加到 "**4. 网络交互审计**" 表格。
+        - 如有截图，**必须**使用 `![desc](path)` 语法嵌入到"**5. 证据**" 部分。
+4. **Finalize**: 测试结束时，填充 "**1. 摘要**"、"**2. 关键发现**" 和 "**6. 建议**"，并最终核对格式。
+5. **intractable problems**: 及时参考**命令列表**寻求解决方案，或者使用`agent-browser --help`命令进行查询。
+
+**交付标准**：***必须严格遵循*** `references/REPORT_GUIDE.md` 的格式要求生成准确且完善的测试报告。
 
 ## 命令列表
 
@@ -91,21 +89,72 @@ agent-browser snapshot -i --json
 
 所有动作均支持使用ref（@eX）以获得最高可靠性。
 
-**使用ref的常见动作**：
+**1.使用ref的常见动作**：
 
 ```Bash
+# ============ click @ref 示例============
 agent-browser fill @e1 "testuser"
 agent-browser fill @e2 "P@ssw0rd123"
 agent-browser click @e3
 agent-browser wait --load networkidle
 agent-browser screenshot after-login.png
+agent-browser snapshot -i
 ```
 
-**语义定位（无ref时的备选方案，**ref操作失败后强制尝试备选方案**）**：
+**2.语义定位（无ref时的备选方案，**ref操作失败后强制尝试备选方案**）**：
 
 ```Bash
-agent-browser find text "Login" click
-agent-browser find label "Username" fill "testuser"
+ # ============ find 示例============
+agent-browser find text "Please select" click
+agent-browser find role button click --name "Submit"
+agent-browser find label "Email" fill "user@test.com"
+agent-browser find placeholder "Search" type "query"
+agent-browser find first ".item" click
+agent-browser find nth 2 ".option" click
+```
+
+**3.执行JavaScript操作参考（ref和语义定位均失败时，**必须尝试此方法**）**
+
+```bash
+  # ============ eval 示例============
+  # 点击
+  agent-browser eval "document.querySelector('.btn').click()"
+
+  # 填写
+  agent-browser eval "document.querySelector('input').value = 'text'"
+
+  # 查找并点击
+  agent-browser eval "Array.from(document.querySelectorAll('.item')).find(i => i.textContent
+  === 'X').click()"
+
+  # 获取值
+  agent-browser eval "document.querySelector('.selected').textContent"
+
+  # 设置状态
+  agent-browser eval "window.scrollTo(0, 500)"
+```
+
+**4.选择决策树**
+
+```
+  # 选择决策树
+  需要点击/操作元素
+         │
+         ▼
+     元素有 ref 吗？
+    ┌────┴────┐
+    │         │
+   YES        NO
+    │         │
+    ▼         ▼
+  click @ref  元素有清晰的
+             文本/role/label？
+            ┌────┴────┐
+            │         │
+           YES        NO
+            │         │
+            ▼         ▼
+        find ...   eval
 ```
 
 **其他实用动作**：
@@ -117,6 +166,7 @@ agent-browser find label "Username" fill "testuser"
 - agent-browser get text @e4（提取文本用于验证）
 - agent-browser get url
 - agent-browser get title
+- agent-browser --help（未知操作查询命令，针对未知操作的命令进行查询）
 
 ### 3.5 网络监控（关键）
 
@@ -128,7 +178,6 @@ agent-browser network requests --json
 ```
 
 **用途**：用于填充测试报告中的"网络交互审计"部分，特别是检查 4xx/5xx 错误。
-
 **输出示例**：
 
 ```json
@@ -178,6 +227,7 @@ agent-browser close
       验证当前填充是否符合指导规范(**强制**)，这样即使中途崩溃，数据也不会丢失。
 - **报告生成**：将快照、动作结果和截图汇总为可读的Markdown文件，保存到用户所在项目根目录的`/testing-report`目录下（**强制**
   务必遵循`references/REPORT_GUIDE.md` 中的格式和要求）。
+- **未知操作查询**：如需某个操作却不知道使用什么命令，**必须**优先使用`agent-browser`命令进行查询，再执行或处理。
 
 **示例报告模板**：
 ***强制且必须参考`references/REPORT_GUIDE.md` 中的格式和要求为用户生成完善且符合要求的测试报告Markdown文件，方便用户归档和分享
