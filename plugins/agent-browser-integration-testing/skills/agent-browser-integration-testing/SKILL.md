@@ -4,6 +4,7 @@ description: |
   **网页自动化与端到端集成测试专家 (Web E2E Testing Expert)**
   本技能使具备专业的浏览器测试能力。你将通过 `agent-browser` CLI 进行由逻辑驱动的、原子级的浏览器网页功能测试验证。
   **适用场景**: 需使用浏览器进行业务需求或页面功能的集成测试。
+  
 compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser），详细的安装步骤和故障排除请参考 [`references/AGENT_BROWSER_INSTALLATION.md`](references/AGENT_BROWSER_INSTALLATION.md) 安装指南。
 ---
 
@@ -25,12 +26,14 @@ compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser）�
     - **Action**: 执行操作。
     - **Wait & Re-Snapshot**: 处理动态变化（**严禁盲目连续操作**）。
     - **Audit**: 运行 `network requests --json`。
-    - **Record**: 依据 `REPORT_GUIDE.md` 要求：
+    - **Record (强制即时落盘)**: 依据 `REPORT_GUIDE.md` 要求，**每个关键步骤后必须立即写入报告文件**：
+        - 关键步骤包括：登录/提交/保存等业务操作完成、页面导航、截图、网络审计获取。
         - 如有关键发现，及时记录到"**2. 关键发现**"。
         - 将操作记录追加到 "**3. 执行日志**" 表格。
         - 将 API 数据追加到 "**4. 网络交互审计**" 表格。
         - 如有截图，**必须**使用 `![desc](path)` 语法嵌入到"**5. 证据**" 部分。
-4. **Finalize**: 测试结束时，填充 "**1. 摘要**"、"**2. 关键发现**" 和 "**6. 建议**"，并最终核对格式。
+        - **禁止**未更新报告就继续下一步操作。
+4. **Finalize**: 测试结束时，完善"**1. 摘要**"、"**2. 关键发现**" 和 "**6. 建议**"，并最终核对格式。
    - **强制**：运行 `node scripts/validate-report.js <report-path>` 进行合规校验，通过后才可输出。
 5. **intractable problems**: 及时参考**命令列表**寻求解决方案，或者使用`agent-browser --help`命令进行查询。
 
@@ -73,6 +76,7 @@ compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser）�
 - 4.1 仅包含 `xhr/fetch`；`document` 只在执行日志。
 - 4.2 覆盖所有非 2xx 与关键业务接口。
 - 证据区截图全部使用 `![alt](path)`，并配图注。
+- 执行日志与网络审计为**逐步增量更新**，不得集中回填。
 - 报告中不得残留任何 `<<FILL: ...>>` 占位符。
 - 报告必须为最终内容本体，不附加额外解释。
 
@@ -275,7 +279,6 @@ agent-browser close
 ```
 
 ## 最佳实践
-
 - **始终先执行快照**：使用最新快照中的ref，绝不猜测选择器。
 - **页面变化后必须重新快照**：导航、点击或表单提交会使之前的ref失效。
 - **优先使用ref而非CSS/文本**：ref具有确定性和稳定性。
@@ -286,8 +289,8 @@ agent-browser close
     - 📖 **下拉框专项**：下拉框操作有专门的[完整指南](references/AGENT-BROWSER-DROPDOWN-GUIDE.md)，涵盖原生/自定义下拉框的识别、操作和故障排查。
 - **渐进式记录（Progressive Reporting）**：
     - ❌ **错误**：做完所有测试步骤后，凭记忆一次性写报告。
-    - ✅ **正确**：每做完一步（如登录成功），立刻将截图和 API 结果写入报告文件，同时参考`references/REPORT_GUIDE.md`
-      验证当前填充是否符合指导规范(**强制**)，这样即使中途崩溃，数据也不会丢失。
+    - ✅ **正确**：每个关键步骤后**立即写入报告文件**（执行日志、网络审计、证据/截图、关键发现同步更新），同时**必须**参考
+      `references/REPORT_GUIDE.md` 验证当前填充是否符合指导规范(**强制**)。这样即使中途崩溃，数据也不会丢失。
 - **报告生成**：将快照、动作结果和截图汇总为可读的Markdown文件，保存到用户所在项目根目录的
   `testing-report/report-{timestamp}/` 目录下（**强制**务必遵循`references/REPORT_GUIDE.md` 中的格式和要求），文件名格式为
   `yyyyMMddHHmmss-{business name}-report.md`（其中 timestamp 和文件名中的时间戳为测试开始时间，business name
