@@ -1,5 +1,17 @@
 # 测试报告生成指南
 
+## 报告文件路径格式
+---
+测试报告将保存在以下路径结构中：
+- 目录：`testing-report/report-{timestamp}/`
+- 文件名：`yyyyMMddHHmmss-{business name}-report.md`
+
+其中：
+- `{timestamp}`：测试开始时间戳
+- `yyyyMMddHHmmss`：格式化的时间戳（如：20250209143022）
+- `{business name}`：根据测试业务主题自定义的名称
+---
+
 **角色要求**：当你使用 `agent-browser-integration-testing` 技能完成测试后，你**必须**为用户生成一份最终报告。报告必须严格遵循以下结构和要求，使用清晰、专业、结构化的 Markdown 格式。报告的目标是让用户一目了然地了解测试全貌、关键结果、问题点及证据。
 
 ## Integration Test Report（集成测试报告）

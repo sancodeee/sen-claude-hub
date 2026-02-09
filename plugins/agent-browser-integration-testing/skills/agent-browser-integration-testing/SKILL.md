@@ -246,8 +246,10 @@ agent-browser close
     - ❌ **错误**：做完所有测试步骤后，凭记忆一次性写报告。
     - ✅ **正确**：每做完一步（如登录成功），立刻将截图和 API 结果写入报告文件，同时参考`references/REPORT_GUIDE.md`
       验证当前填充是否符合指导规范(**强制**)，这样即使中途崩溃，数据也不会丢失。
-- **报告生成**：将快照、动作结果和截图汇总为可读的Markdown文件，保存到用户所在项目根目录的`/testing-report`目录下（**强制**
-  务必遵循`references/REPORT_GUIDE.md` 中的格式和要求）。
+- **报告生成**：将快照、动作结果和截图汇总为可读的Markdown文件，保存到用户所在项目根目录的
+  `testing-report/report-{timestamp}/` 目录下（**强制**务必遵循`references/REPORT_GUIDE.md` 中的格式和要求），文件名格式为
+  `yyyyMMddHHmmss-{business name}-report.md`（其中 timestamp 和文件名中的时间戳为测试开始时间，business name
+  为根据测试业务主题自定义的名称）。
 - **未知操作查询**：如需某个操作却不知道使用什么命令，**必须**优先使用`agent-browser`命令进行查询，再执行或处理。
 
 **示例报告模板**：
