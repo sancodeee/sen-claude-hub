@@ -18,6 +18,7 @@ compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser）�
 **核心作业流程 (SOP - 渐进式报告)**：
 
 1. **Init**: 参考 `references/REPORT_GUIDE.md` 的头部格式，**立即**创建报告文件，写入 Target URL 和 Date。
+   - **强制**：使用 `references/REPORT_TEMPLATE.md` 作为报告骨架（复制为报告文件内容），再进行实时填充。
 2. **Open**: 打开目标 URL。
 3. **Loop (循环执行)**:
     - **Snapshot**: 获取 ref。
@@ -30,9 +31,50 @@ compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser）�
         - 将 API 数据追加到 "**4. 网络交互审计**" 表格。
         - 如有截图，**必须**使用 `![desc](path)` 语法嵌入到"**5. 证据**" 部分。
 4. **Finalize**: 测试结束时，填充 "**1. 摘要**"、"**2. 关键发现**" 和 "**6. 建议**"，并最终核对格式。
+   - **强制**：运行 `node scripts/validate-report.js <report-path>` 进行合规校验，通过后才可输出。
 5. **intractable problems**: 及时参考**命令列表**寻求解决方案，或者使用`agent-browser --help`命令进行查询。
 
 **交付标准**：***必须严格遵循*** `references/REPORT_GUIDE.md` 的格式要求生成准确且完善的测试报告。
+
+## 报告模板与字段映射（强制）
+
+**模板要求**：
+
+- 报告必须从 `references/REPORT_TEMPLATE.md` 复制生成。
+- **所有** `<<FILL: ...>>` 占位符必须被真实值替换，禁止保留空白或占位符。
+
+**字段来源映射（必须遵循）**：
+
+- **用户原始需求**：用户提问原文。
+- **目标 URL**：`agent-browser open` 的 URL。
+- **日期与时间**：测试完成时的真实时间（格式 `YYYY-MM-DD HH:MM:SS`）。
+- **总体状态**：
+  - 失败命令数 > 0 → `FAIL`
+  - 失败命令数 = 0 且存在异常 API（4xx/5xx）→ `WARN`
+  - 否则 → `PASS`
+- **总耗时**：从 `open` 到最后一次操作的累计耗时。
+- **执行的总命令数/成功/失败**：来自执行日志表统计。
+- **访问的关键页面数**：`document` 导航次数或主要 URL 列表数量。
+- **生成的截图数量**：证据区实际嵌入的图片数量。
+- **最终页面标题/URL**：`agent-browser get title` / `agent-browser get url`。
+- **网络审计 4.1/4.2/4.3**：
+  - `xhr` / `fetch` → 4.1（概览）
+  - 所有非 2xx + 关键业务接口 → 4.2（详情）
+  - `script/stylesheet/image/font` 等静态资源 → 4.3（可选）
+  - `document` 仅进入 **执行日志**，不得进入网络审计
+
+## Report Compliance Checklist（Finalize Gate）
+
+**以下条目必须全部满足，否则禁止输出报告**：
+
+- 报告头部 5 项信息全部填写（需求、URL、时间、状态、耗时）。
+- 章节结构完整且顺序一致：1~6 及 4.1/4.2/4.3。
+- 执行日志表格存在且至少包含 `open` 与最后一步操作。
+- 4.1 仅包含 `xhr/fetch`；`document` 只在执行日志。
+- 4.2 覆盖所有非 2xx 与关键业务接口。
+- 证据区截图全部使用 `![alt](path)`，并配图注。
+- 报告中不得残留任何 `<<FILL: ...>>` 占位符。
+- 报告必须为最终内容本体，不附加额外解释。
 
 ## 命令列表
 
