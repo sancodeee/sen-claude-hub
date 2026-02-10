@@ -19,14 +19,14 @@ compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser）�
 **核心作业流程 (SOP - 渐进式报告)**：
 
 1. **Init**: 参考 `references/REPORT_GUIDE.md` 的头部格式，**立即**创建报告文件，写入 Target URL 和 Date。
-   - **强制**：使用 `references/REPORT_TEMPLATE.md` 作为报告骨架（复制为报告文件内容），再进行实时填充。
+   - **强制**：使用 `references/REPORT_TEMPLATE.md` 作为报告骨架（复制为报告文件内容），再对报告进行**实时**填充(**边测试边填充**)。
 2. **Open**: 打开目标 URL。
 3. **Loop (循环执行)**:
     - **Snapshot**: 获取 ref。
     - **Action**: 执行操作。
     - **Wait & Re-Snapshot**: 处理动态变化（**严禁盲目连续操作**）。
     - **Audit**: 运行 `network requests --json`。
-    - **Record (强制即时落盘)**: 依据 `REPORT_GUIDE.md` 要求，**每个关键步骤后必须立即写入报告文件**：
+    - **Record (强制即时落盘)**: 依据 `REPORT_GUIDE.md` 要求，**每个关键步骤后**必须**立即写入报告文件**：
         - 关键步骤包括：登录/提交/保存等业务操作完成、页面导航、截图、网络审计获取。
         - 如有关键发现，及时记录到"**2. 关键发现**"。
         - 将操作记录追加到 "**3. 执行日志**" 表格。
