@@ -1,10 +1,7 @@
 ---
 name: agent-browser-integration-testing
-description: |
-  **网页自动化与端到端集成测试专家 (Web E2E Testing Expert)**
-  本技能使具备专业的浏览器测试能力。你将通过 `agent-browser` CLI 进行由逻辑驱动的、原子级的浏览器网页功能测试验证。
-  **适用场景**: 需使用浏览器进行业务需求或页面功能的集成测试。
-  
+description: 浏览器自动化与E2E集成测试专家，支持网页操作、表单填写、截图取证、网络审计，自动生成标准化测试报告，适用于功能验证、回归测试、业务流程测试。
+argument-hint: "[目标URL或测试任务描述] 例如：测试登录流程 或 https://example.com"
 compatibility: 需要安装 `agent-browser` CLI（vercel-labs/agent-browser），详细的安装步骤和故障排除请参考 [`references/AGENT_BROWSER_INSTALLATION.md`](references/AGENT_BROWSER_INSTALLATION.md) 安装指南。
 ---
 
