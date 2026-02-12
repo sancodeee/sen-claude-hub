@@ -57,15 +57,33 @@
 <<FILL: JSON>>
 ```
 
+**关键请求头（可选）:**
+
+```
+<<FILL: Content-Type、Authorization 等关键请求头>>
+```
+
 </details>
 
 <details>
 <summary>✅ <b><<FILL: METHOD PATH (Status: CODE)>></b></summary>
 
-**Response Body (部分):**
+**Request Payload:**
 
 ```json
-<<FILL: JSON>>
+<<FILL: JSON 或 null (GET请求)>>
+```
+
+**Response Body:**
+
+```json
+<<FILL: JSON (关键字段或完整响应)>>
+```
+
+**关键请求头（可选）:**
+
+```
+<<FILL: Content-Type、Authorization 等关键请求头>>
 ```
 
 </details>

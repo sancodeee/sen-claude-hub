@@ -107,17 +107,36 @@
   "message": "Quantity must be positive"
 }
 ```
+
+**关键请求头（可选）:**
+```
+Content-Type: application/json
+Authorization: Bearer xxx
+```
 </details>
 
 <details>
 <summary>✅ <b>POST /api/v1/auth/login (Status: 200)</b></summary>
 
-**Response Body (部分):**
+**Request Payload:**
+```json
+{
+  "username": "testuser",
+  "password": "******"
+}
+```
+
+**Response Body:**
 ```json
 {
   "token": "eyJhbG...",
   "user": { "id": 101, "role": "admin" }
 }
+```
+
+**关键请求头（可选）:**
+```
+Content-Type: application/json
 ```
 </details>
 
