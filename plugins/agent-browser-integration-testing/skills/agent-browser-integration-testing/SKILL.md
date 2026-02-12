@@ -186,25 +186,13 @@ agent-browser find nth 2 ".option" click
 
 **4.选择决策树**
 
-```
-  # 选择决策树
-  需要点击/操作元素
-         │
-         ▼
-     元素有 ref 吗？
-    ┌────┴────┐
-    │         │
-   YES        NO
-    │         │
-    ▼         ▼
-  click @ref  元素有清晰的
-             文本/role/label？
-            ┌────┴────┐
-            │         │
-           YES        NO
-            │         │
-            ▼         ▼
-        find ...   eval
+```mermaid
+flowchart TD
+    A[需要点击/操作元素] --> B{元素有 ref 吗?}
+    B -->|YES| C[click @ref]
+    B -->|NO| D{元素有清晰的<br/>文本/role/label?}
+    D -->|YES| E[find ...]
+    D -->|NO| F[eval]
 ```
 
 **其他实用动作**：
@@ -297,6 +285,4 @@ agent-browser close
   为根据测试业务主题自定义的名称）。
 - **未知操作查询**：如需某个操作却不知道使用什么命令，**必须**优先使用`agent-browser`命令进行查询，再执行或处理。
 
-**示例报告模板**：
-***强制且必须参考`references/REPORT_GUIDE.md` 中的格式和要求为用户生成完善且符合要求的测试报告Markdown文件，方便用户归档和分享
-***。
+**示例报告模板**：强制参考 `references/REPORT_GUIDE.md` 中的格式和要求为用户生成完善且符合要求的测试报告 Markdown 文件，方便用户归档和分享。
