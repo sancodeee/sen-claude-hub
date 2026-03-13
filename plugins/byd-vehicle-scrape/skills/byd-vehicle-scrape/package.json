@@ -1,0 +1,14 @@
+{
+  "name": "byd-vehicle-scrape",
+  "version": "1.0.0",
+  "description": "BYD 车型数据爬取工具",
+  "type": "commonjs",
+  "scripts": {
+    "scrape": "node scripts/scrape-byd-variant-details.js",
+    "sql": "node scripts/generate_sql.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {}
+}

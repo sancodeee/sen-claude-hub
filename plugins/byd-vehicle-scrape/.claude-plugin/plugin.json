@@ -1,0 +1,8 @@
+{
+  "name": "byd-vehicle-scrape",
+  "version": "1.0.0",
+  "description": "BYD 车型数据爬取与 SQL 转换技能。从 bydhaberfield.com.au 网站爬取车型配置和价格数据，生成 JSON 文件，再转换为 MySQL INSERT SQL 语句。",
+  "author": {
+    "name": "sen"
+  }
+}
