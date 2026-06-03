@@ -12,10 +12,10 @@ from pathlib import Path
 
 COPY_PATHS = [
     ".claude",
-    ".CLAUDE.md",
+    "CLAUDE.md",
     ".mcp.json",
     ".codex",
-    ".AGENTS.md",
+    "AGENTS.md",
     ".java-local.properties",
 ]
 

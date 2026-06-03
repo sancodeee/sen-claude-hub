@@ -1,6 +1,6 @@
 ---
 name: create-new-worktree
-description: 为当前 Git 项目基于指定分支或当前分支创建 worktree，并复制本地代理和项目配置文件。适用于用户需要基于同一个分支创建多个 worktree，并同步 .claude、.codex、.mcp.json、.java-local.properties 等本地配置的场景。
+description: 为当前 Git 项目基于指定分支或当前分支创建 worktree，并复制本地代理和项目配置文件。适用于用户需要基于同一个分支创建多个 worktree，并同步 .claude、CLAUDE.md、.codex、AGENTS.md、.mcp.json、.java-local.properties 等本地配置的场景。
 argument-hint: "[目标目录] [--base-branch 分支名] [--new-branch 新分支名] 例如：/tmp/my-worktree --base-branch feature/a"
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash
@@ -58,10 +58,10 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree
 worktree 创建成功后，从源项目复制以下存在的路径到新 worktree：
 
 - `.claude/`
-- `.CLAUDE.md`
+- `CLAUDE.md`
 - `.mcp.json`
 - `.codex/`
-- `.AGENTS.md`
+- `AGENTS.md`
 - `.java-local.properties`
 
 不存在的源路径会跳过。目标路径已存在时会跳过，不覆盖。
