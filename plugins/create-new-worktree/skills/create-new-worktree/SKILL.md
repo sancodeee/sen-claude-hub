@@ -1,7 +1,7 @@
 ---
 name: create-new-worktree
-description: 为当前 Git 项目创建 worktree，并复制本地代理和项目配置文件。适用于用户需要从当前分支或指定现存分支创建新工作区，并同步 .claude、.codex、.mcp.json、.java-local.properties 等本地配置的场景。
-argument-hint: "[目标目录] [--branch 分支名] 例如：/tmp/my-worktree 或 /tmp/my-worktree --branch feature/foo"
+description: 为当前 Git 项目基于指定分支或当前分支创建 worktree，并复制本地代理和项目配置文件。适用于用户需要基于同一个分支创建多个 worktree，并同步 .claude、.codex、.mcp.json、.java-local.properties 等本地配置的场景。
+argument-hint: "[目标目录] [--base-branch 分支名] [--new-branch 新分支名] 例如：/tmp/my-worktree --base-branch feature/a"
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash
 ---
@@ -24,10 +24,16 @@ allowed-tools: Read, Grep, Glob, Bash
 python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree.py <target_dir>
 ```
 
-指定现存分支：
+指定基准分支：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree.py <target_dir> --branch <branch>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree.py <target_dir> --base-branch <branch>
+```
+
+指定新 worktree 分支名：
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree.py <target_dir> --base-branch <branch> --new-branch <new_branch>
 ```
 
 调试或说明执行计划时使用 dry run：
@@ -38,12 +44,14 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree
 
 ## 行为规则
 
-- 默认使用当前分支执行 `git worktree add <target_dir> <current_branch>`。
-- 如果用户指定 `--branch`，执行 `git worktree add <target_dir> <branch>`。
-- 指定分支必须已存在，脚本不会创建新分支。
+- 如果用户传入 `--base-branch`，以该分支作为基准。
+- 如果用户不传 `--base-branch`，以当前目录项目正在使用的分支作为基准。
+- 每个 worktree 都会创建并检出一个新分支，默认新分支名为目标目录 basename。
+- 实际命令形态是 `git worktree add -b <new_branch> <target_dir> <base_branch>`。
+- 基准分支不会被重复检出；它只作为新分支的起点。
 - 不使用 `git worktree add --force`。
+- 不使用 `git worktree add -B` 覆盖已有分支。
 - 目标目录必须不存在。
-- 如果 Git 因当前分支已被其他 worktree 使用而拒绝创建，直接报告错误。
 
 ## 复制路径
 
@@ -60,7 +68,7 @@ worktree 创建成功后，从源项目复制以下存在的路径到新 worktre
 
 ## 使用原则
 
-- 执行前确认目标目录和分支名。
+- 执行前确认目标目录、基准分支和新分支名。
 - 不把未提交改动复制到新 worktree，除非这些改动位于上述本地配置路径且文件系统中存在。
 - 如果用户只是询问怎么做，先给 dry-run 或命令说明。
-- 出错时优先展示脚本输出，不临场改成自动建分支或强制添加 worktree。
+- 出错时优先展示脚本输出，不临场改成强制添加 worktree 或覆盖已有分支。
