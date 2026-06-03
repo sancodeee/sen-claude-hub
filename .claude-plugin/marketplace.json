@@ -48,7 +48,7 @@
       "name": "create-new-worktree",
       "description": "为当前项目或指定现存分支创建 Git worktree，并复制本地代理与项目配置文件。",
       "source": "./plugins/create-new-worktree",
-      "version": "1.0.0"
+      "version": "1.0.1"
     }
   ]
 }
