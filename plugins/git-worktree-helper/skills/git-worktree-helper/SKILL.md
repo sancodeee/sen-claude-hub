@@ -1,12 +1,12 @@
 ---
-name: create-new-worktree
+name: git-worktree-helper
 description: 为当前 Git 项目基于指定分支或当前分支创建 worktree，并复制本地代理和项目配置文件。适用于用户需要基于同一个分支创建多个 worktree，并同步 .claude、CLAUDE.md、.codex、AGENTS.md、.mcp.json、.java-local.properties 等本地配置的场景。
 argument-hint: "[目标目录] [--base-branch 分支名] [--new-branch 新分支名] 例如：/tmp/my-worktree --base-branch feature/a"
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
-# Create New Worktree
+# Git Worktree Helper
 
 本技能用于从当前项目创建新的 Git worktree，并复制本地代理/项目配置文件。
 
@@ -21,25 +21,25 @@ allowed-tools: Read, Grep, Glob, Bash
 从用户当前项目目录执行：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree.py <target_dir>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree.py <target_dir>
 ```
 
 指定基准分支：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree.py <target_dir> --base-branch <branch>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree.py <target_dir> --base-branch <branch>
 ```
 
 指定新 worktree 分支名：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree.py <target_dir> --base-branch <branch> --new-branch <new_branch>
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree.py <target_dir> --base-branch <branch> --new-branch <new_branch>
 ```
 
 调试或说明执行计划时使用 dry run：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/create-new-worktree/scripts/create_worktree.py <target_dir> --dry-run
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree.py <target_dir> --dry-run
 ```
 
 ## 行为规则
