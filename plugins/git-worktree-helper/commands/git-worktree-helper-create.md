@@ -1,5 +1,5 @@
 ---
-name: git-worktree-helper:invoke
+name: git-worktree-helper:create
 description: Immediately call the git-worktree-helper skill to create a Git worktree and copy local agent/project configuration files.
 argument-hint: "[目标目录] [--base-branch 分支名] [--new-branch 新分支名] 例如：/tmp/my-worktree --base-branch feature/a"
 ---
