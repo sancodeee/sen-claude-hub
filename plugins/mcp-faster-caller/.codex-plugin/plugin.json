@@ -1,0 +1,26 @@
+{
+  "name": "mcp-faster-caller",
+  "version": "1.0.0",
+  "description": "Resolve concise aliases into structured MCP server calls.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "MCP Faster Caller",
+    "shortDescription": "Route concise requests to MCP tools.",
+    "longDescription": "Parse bilingual MCP aliases for GitHub, databases, browsers, web search, documentation, images, and PDFs, then route requests to the matching MCP server.",
+    "developerName": "sen",
+    "category": "Productivity",
+    "capabilities": [
+      "MCP routing",
+      "Alias parsing",
+      "Tool discovery"
+    ],
+    "defaultPrompt": [
+      "Use the GitHub MCP tools for this request.",
+      "Query the database through the configured MCP server.",
+      "Route this browser task to the appropriate MCP tools."
+    ]
+  }
+}

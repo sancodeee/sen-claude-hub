@@ -10,6 +10,21 @@ allowed-tools: Read, Grep, Glob, Bash
 
 本技能用于从当前项目**创建**新的 Git worktree 并同步本地代理/项目配置，或**清理**用完的 worktree（目录 + 对应分支）。
 
+下列命令中的 `${PLUGIN_ROOT}` 表示插件根目录。执行脚本前必须先完成初始化：
+
+- Claude Code：执行 `PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:?CLAUDE_PLUGIN_ROOT is not set}"`。
+- Codex：agent 必须从已加载技能的绝对路径中取得当前 `SKILL.md` 所在目录，再向上两级得到插件根目录，并将该绝对路径赋给
+  `PLUGIN_ROOT`。不要在 Codex 中执行 Claude Code 的赋值命令。
+
+Codex 示例：若当前技能文件是
+`/path/to/git-worktree-helper/skills/git-worktree-helper/SKILL.md`，则必须执行：
+
+```bash
+PLUGIN_ROOT="/path/to/git-worktree-helper"
+```
+
+所有脚本命令都使用 `${PLUGIN_ROOT:?PLUGIN_ROOT must be set}`，未正确初始化时应立即停止，禁止以空路径继续执行。
+
 ## 使用场景
 
 - 用户要为当前项目创建一个新的 worktree。
@@ -22,25 +37,25 @@ allowed-tools: Read, Grep, Glob, Bash
 从用户当前项目目录执行：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree.py <target_dir>
+python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scripts/create_worktree.py" <target_dir>
 ```
 
 指定基准分支：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree.py <target_dir> --base-branch <branch>
+python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scripts/create_worktree.py" <target_dir> --base-branch <branch>
 ```
 
 指定新 worktree 分支名：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree.py <target_dir> --base-branch <branch> --new-branch <new_branch>
+python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scripts/create_worktree.py" <target_dir> --base-branch <branch> --new-branch <new_branch>
 ```
 
 调试或说明执行计划时使用 dry run：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree.py <target_dir> --dry-run
+python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scripts/create_worktree.py" <target_dir> --dry-run
 ```
 
 ## 清理脚本入口
@@ -48,25 +63,25 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/create_worktree
 默认安全模式（不带 `--force`，触发预检；预检失败仅报告不删除）：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/remove_worktree.py <target_dir>
+python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scripts/remove_worktree.py" <target_dir>
 ```
 
 只删 worktree、保留分支：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/remove_worktree.py <target_dir> --keep-branch
+python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scripts/remove_worktree.py" <target_dir> --keep-branch
 ```
 
 强制模式（跳过阻断性预检，`worktree remove --force` + `branch -D`，**只在用户明确确认后使用**）：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/remove_worktree.py <target_dir> --force
+python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scripts/remove_worktree.py" <target_dir> --force
 ```
 
 预演：
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree-helper/scripts/remove_worktree.py <target_dir> --dry-run
+python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scripts/remove_worktree.py" <target_dir> --dry-run
 ```
 
 退出码：`0` 成功，`1` 一般错误（如路径不是已注册 worktree），`2` 预检阻断。

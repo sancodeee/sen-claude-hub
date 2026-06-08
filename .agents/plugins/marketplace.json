@@ -1,0 +1,92 @@
+{
+  "name": "sen-claude-hub",
+  "interface": {
+    "displayName": "Sen Claude Hub"
+  },
+  "plugins": [
+    {
+      "name": "mcp-faster-caller",
+      "source": {
+        "source": "local",
+        "path": "./plugins/mcp-faster-caller"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "global-java-code-style",
+      "source": {
+        "source": "local",
+        "path": "./plugins/global-java-code-style"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "fintorq-code-style",
+      "source": {
+        "source": "local",
+        "path": "./plugins/fintorq-code-style"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "agent-browser-integration-testing",
+      "source": {
+        "source": "local",
+        "path": "./plugins/agent-browser-integration-testing"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "byd-vehicle-scrape",
+      "source": {
+        "source": "local",
+        "path": "./plugins/byd-vehicle-scrape"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Data"
+    },
+    {
+      "name": "jenkins-cli",
+      "source": {
+        "source": "local",
+        "path": "./plugins/jenkins-cli"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "git-worktree-helper",
+      "source": {
+        "source": "local",
+        "path": "./plugins/git-worktree-helper"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

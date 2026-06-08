@@ -1,0 +1,26 @@
+{
+  "name": "git-worktree-helper",
+  "version": "2.0.0",
+  "description": "Create and safely clean up Git worktrees while synchronizing local agent configuration.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Git Worktree Helper",
+    "shortDescription": "Create and clean up Git worktrees safely.",
+    "longDescription": "Create isolated Git worktrees, synchronize local project and agent configuration, and remove completed worktrees with safety checks.",
+    "developerName": "sen",
+    "category": "Productivity",
+    "capabilities": [
+      "Worktree creation",
+      "Configuration synchronization",
+      "Safe cleanup"
+    ],
+    "defaultPrompt": [
+      "Create a worktree for this task.",
+      "Create a worktree from this base branch.",
+      "Safely clean up this completed worktree."
+    ]
+  }
+}

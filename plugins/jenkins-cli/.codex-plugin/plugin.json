@@ -1,0 +1,26 @@
+{
+  "name": "jenkins-cli",
+  "version": "1.0.0",
+  "description": "Safe usage guidance and workflows for the local Jenkins CLI.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Jenkins CLI",
+    "shortDescription": "Use Jenkins CLI with risk-aware safeguards.",
+    "longDescription": "Query Jenkins, inspect jobs and console logs, diagnose permissions, and handle configuration or build operations according to explicit risk boundaries.",
+    "developerName": "sen",
+    "category": "Productivity",
+    "capabilities": [
+      "Jenkins diagnostics",
+      "Job inspection",
+      "Guarded operations"
+    ],
+    "defaultPrompt": [
+      "List the Jenkins jobs available to me.",
+      "Show the console log for this Jenkins build.",
+      "Diagnose this Jenkins CLI permission error."
+    ]
+  }
+}

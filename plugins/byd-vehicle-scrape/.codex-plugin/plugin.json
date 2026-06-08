@@ -1,0 +1,26 @@
+{
+  "name": "byd-vehicle-scrape",
+  "version": "1.0.0",
+  "description": "Scrape BYD vehicle configuration and pricing data and convert it to MySQL SQL.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "BYD Vehicle Scrape",
+    "shortDescription": "Scrape BYD vehicle data and generate SQL.",
+    "longDescription": "Collect BYD Australia vehicle configuration and pricing data, save it as JSON, and generate MySQL INSERT statements.",
+    "developerName": "sen",
+    "category": "Data",
+    "capabilities": [
+      "Web scraping",
+      "JSON generation",
+      "SQL generation"
+    ],
+    "defaultPrompt": [
+      "Scrape the latest data for BYD Atto 2.",
+      "Generate SQL from the scraped BYD vehicle data.",
+      "Scrape configuration and pricing for these BYD models."
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "agent-browser-integration-testing",
+  "version": "1.0.0",
+  "description": "Browser automation and end-to-end integration testing through the agent-browser CLI.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Browser Integration Testing",
+    "shortDescription": "Run browser automation and end-to-end tests.",
+    "longDescription": "Inspect web applications, execute browser workflows, collect evidence, and generate structured integration test reports with agent-browser.",
+    "developerName": "sen",
+    "category": "Productivity",
+    "capabilities": [
+      "Browser automation",
+      "End-to-end testing",
+      "Test reporting"
+    ],
+    "defaultPrompt": [
+      "Run an end-to-end test for this web application.",
+      "Inspect this page and report functional issues.",
+      "Execute a browser smoke test and collect evidence."
+    ]
+  }
+}

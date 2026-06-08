@@ -21,8 +21,14 @@ allowed-tools: Read, Grep, Glob, Bash
 1. 解析用户输入的指令，提取 alias、command 和 arguments
 2. 使用 Python 脚本 `scripts/call_mcp.py` 解析指令：
    ```bash
-   # python3 ~/.claude/skills/mcp-faster-caller/scripts/call_mcp.py "$ARGUMENTS"
-   python3 ${CLAUDE_PLUGIN_ROOT}/skills/mcp-faster-caller/scripts/call_mcp.py "$ARGUMENTS"
+   # Claude Code
+   SKILL_DIRECTORY="${CLAUDE_PLUGIN_ROOT:?CLAUDE_PLUGIN_ROOT is not set}/skills/mcp-faster-caller"
+
+   # Codex：不得执行上面的 Claude 赋值；agent 必须将 SKILL_DIRECTORY
+   # 赋值为已加载 SKILL.md 所在目录的绝对路径。
+   # 示例：SKILL_DIRECTORY="/path/to/mcp-faster-caller/skills/mcp-faster-caller"
+
+   python3 "${SKILL_DIRECTORY:?SKILL_DIRECTORY must be set}/scripts/call_mcp.py" "$ARGUMENTS"
    ```
 3. 根据返回结果，调用对应的 MCP 工具
 
@@ -45,4 +51,3 @@ browser goto https://example.com
 - 🔧 **[故障排除](references/troubleshooting.md)** - 常见问题和解决方案
 - ⚙️ **[自定义配置](references/configuration.md)** - 如何添加新别名（代码修改方式）
 - ⚙️ **[自定义配置](references/configuration.md)** - 如何安装缺失的 ***MCP SERVER***
-

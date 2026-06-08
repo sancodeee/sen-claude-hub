@@ -1,0 +1,26 @@
+{
+  "name": "fintorq-code-style",
+  "version": "1.0.0",
+  "description": "Official code style and development standards for the Fintorq project.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Fintorq Code Style",
+    "shortDescription": "Apply Fintorq development standards.",
+    "longDescription": "Review and implement Fintorq Java code using the project's established Spring Boot, Gradle, MyBatis-Plus, testing, and security conventions.",
+    "developerName": "sen",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Code review",
+      "Java standards",
+      "Code generation"
+    ],
+    "defaultPrompt": [
+      "Review this code against Fintorq standards.",
+      "Implement this Java change using Fintorq conventions.",
+      "Check this module for Fintorq code style violations."
+    ]
+  }
+}

@@ -19,6 +19,22 @@ description: BYD 车型数据爬取与 SQL 转换技能。从 bydhaberfield.com.
 >
 > **正确做法**：使用 `cd` 切换到用户工作目录后，再执行脚本命令。
 
+执行命令前必须先初始化技能目录 `SKILL_DIR`：
+
+- Claude Code：执行
+  `SKILL_DIR="${CLAUDE_PLUGIN_ROOT:?CLAUDE_PLUGIN_ROOT is not set}/skills/byd-vehicle-scrape"`。
+- Codex：agent 必须从已加载技能的元数据中取得当前 `SKILL.md` 所在目录的绝对路径，并将该路径赋给 `SKILL_DIR`。不要在
+  Codex 中执行 Claude Code 的赋值命令。
+
+Codex 示例：若当前技能文件是
+`/path/to/byd-vehicle-scrape/skills/byd-vehicle-scrape/SKILL.md`，则必须执行：
+
+```bash
+SKILL_DIR="/path/to/byd-vehicle-scrape/skills/byd-vehicle-scrape"
+```
+
+后续命令使用 `${SKILL_DIR:?SKILL_DIR must be set}`，未正确初始化时应立即停止，同时保持 shell 当前目录为用户工作目录。
+
 ## 工作流程
 
 ```
@@ -45,13 +61,13 @@ description: BYD 车型数据爬取与 SQL 转换技能。从 bydhaberfield.com.
 
 ```bash
 # 爬取单个车型（在用户工作目录下执行）
-node ~/.claude/skills/byd-vehicle-scrape/scripts/scrape-byd-variant-details.js --model="Atto 2"
+node "${SKILL_DIR:?SKILL_DIR must be set}/scripts/scrape-byd-variant-details.js" --model="Atto 2"
 
 # 爬取多个车型（逗号分隔）
-node ~/.claude/skills/byd-vehicle-scrape/scripts/scrape-byd-variant-details.js --model="Atto 2,Atto 3"
+node "${SKILL_DIR:?SKILL_DIR must be set}/scripts/scrape-byd-variant-details.js" --model="Atto 2,Atto 3"
 
 # 爬取所有车型
-node ~/.claude/skills/byd-vehicle-scrape/scripts/scrape-byd-variant-details.js
+node "${SKILL_DIR:?SKILL_DIR must be set}/scripts/scrape-byd-variant-details.js"
 ```
 
 ### 可选参数
@@ -79,10 +95,10 @@ JSON 文件保存到**用户工作目录**下的 `byd-output/json/` 目录，命
 
 ```bash
 # 使用默认文件（最新的 JSON 文件）
-node ~/.claude/skills/byd-vehicle-scrape/scripts/generate_sql.mjs
+node "${SKILL_DIR:?SKILL_DIR must be set}/scripts/generate_sql.mjs"
 
 # 指定输入文件
-node ~/.claude/skills/byd-vehicle-scrape/scripts/generate_sql.mjs byd-variant-details_atto-2_2026-03-13_10-30-00.json
+node "${SKILL_DIR:?SKILL_DIR must be set}/scripts/generate_sql.mjs" byd-variant-details_atto-2_2026-03-13_10-30-00.json
 ```
 
 ### 输出
@@ -103,11 +119,15 @@ SQL 文件包含：
 # 确保在用户工作目录下执行（例如：/Users/sen/projects/my-project）
 pwd  # 确认当前目录
 
+# 先按上文规则初始化 SKILL_DIR：
+# Claude Code 可执行下一行；Codex 不得执行该行，必须使用当前 SKILL.md 所在目录的绝对路径。
+SKILL_DIR="${CLAUDE_PLUGIN_ROOT:?CLAUDE_PLUGIN_ROOT is not set}/skills/byd-vehicle-scrape"
+
 # 1. 爬取 Atto 2 车型数据（输出到 ./byd-output/json/）
-node ~/.claude/skills/byd-vehicle-scrape/scripts/scrape-byd-variant-details.js --model="Atto 2"
+node "${SKILL_DIR:?SKILL_DIR must be set}/scripts/scrape-byd-variant-details.js" --model="Atto 2"
 
 # 2. 生成 SQL（使用刚刚生成的 JSON 文件，输出到 ./byd-output/sql/）
-node ~/.claude/skills/byd-vehicle-scrape/scripts/generate_sql.mjs byd-variant-details_atto-2_2026-03-13_10-30-00.json
+node "${SKILL_DIR:?SKILL_DIR must be set}/scripts/generate_sql.mjs" byd-variant-details_atto-2_2026-03-13_10-30-00.json
 
 # 3. 查看输出文件
 ls -la ./byd-output/json/

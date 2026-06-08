@@ -1,0 +1,26 @@
+{
+  "name": "global-java-code-style",
+  "version": "1.0.0",
+  "description": "General Java coding, architecture, error handling, testing, and security standards.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Global Java Code Style",
+    "shortDescription": "Apply comprehensive Java coding standards.",
+    "longDescription": "Review and generate Java code using consistent naming, structure, documentation, exception handling, testing, dependency, and security conventions.",
+    "developerName": "sen",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Java code review",
+      "Coding standards",
+      "Implementation guidance"
+    ],
+    "defaultPrompt": [
+      "Review this Java code for style and quality issues.",
+      "Apply the Java standards to this implementation.",
+      "Check this project for Java best-practice violations."
+    ]
+  }
+}
