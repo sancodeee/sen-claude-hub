@@ -7,7 +7,13 @@ import argparse
 import sys
 from pathlib import Path
 
-from create_worktree import WorktreeError, run_git
+from config_sync import (
+    apply_sync,
+    is_managed_status_path,
+    plan_sync,
+    print_sync_plan,
+)
+from worktree_common import WorktreeError, run_git
 
 
 EXIT_OK = 0
@@ -80,14 +86,27 @@ def repo_head_branch(repo: Path) -> str | None:
     return result.stdout.strip() or None
 
 
-def worktree_is_dirty(target: Path) -> tuple[bool, str]:
-    result = run_git(target, ["status", "--porcelain"])
-    lines = [l for l in result.stdout.splitlines() if l.strip()]
-    if not lines:
-        return False, ""
-    modified = sum(1 for l in lines if not l.startswith("??"))
-    untracked = sum(1 for l in lines if l.startswith("??"))
-    return True, f"{modified} modified, {untracked} untracked"
+def worktree_dirty_paths(target: Path) -> tuple[list[str], list[str]]:
+    result = run_git(target, ["status", "--porcelain=v1", "-z", "--untracked-files=all"])
+    managed: list[str] = []
+    unmanaged: list[str] = []
+    records = result.stdout.split("\0")
+    index = 0
+    while index < len(records):
+        record = records[index]
+        index += 1
+        if not record:
+            continue
+        status = record[:2]
+        relative_path = record[3:]
+        paths = [relative_path]
+        if "R" in status or "C" in status:
+            if index < len(records) and records[index]:
+                paths.append(records[index])
+                index += 1
+        destination = managed if all(is_managed_status_path(path) for path in paths) else unmanaged
+        destination.extend(paths)
+    return managed, unmanaged
 
 
 def branch_is_merged(repo: Path, branch: str) -> tuple[bool, str]:
@@ -109,7 +128,7 @@ def run_prechecks(
     target: Path,
     entries: list[dict],
     keep_branch: bool,
-) -> tuple[list[tuple[str, str]], dict | None]:
+) -> tuple[list[tuple[str, str]], dict | None, bool]:
     """Return (failures, target_entry). Failures empty means all checks pass."""
     failures: list[tuple[str, str]] = []
 
@@ -121,8 +140,9 @@ def run_prechecks(
     if main_worktree_path(entries, main_repo) == target:
         failures.append(("main_worktree", "拒绝清理主 worktree"))
 
-    dirty, detail = worktree_is_dirty(target)
-    if dirty:
+    managed_dirty, unmanaged_dirty = worktree_dirty_paths(target)
+    if unmanaged_dirty:
+        detail = f"{len(unmanaged_dirty)} path(s): {', '.join(unmanaged_dirty[:5])}"
         failures.append(("dirty_worktree", detail))
 
     branch = entry.get("branch")
@@ -135,7 +155,7 @@ def run_prechecks(
             if not merged:
                 failures.append(("branch_unmerged", detail))
 
-    return failures, entry
+    return failures, entry, bool(managed_dirty)
 
 
 def print_precheck_report(failures: list[tuple[str, str]]) -> None:
@@ -143,25 +163,30 @@ def print_precheck_report(failures: list[tuple[str, str]]) -> None:
     for code, detail in failures:
         print(f"- code: {code}")
         print(f"  detail: {detail}")
-    print("ACTION REQUIRED: 若确认丢弃这些改动 / 强制删除未合并分支，请使用 --force 重新执行。")
+    sync_failure = any(code.startswith("config_sync_") for code, _ in failures)
+    if sync_failure:
+        print("ACTION REQUIRED: 配置同步问题不能通过 --force 绕过，请处理后重试。")
+    else:
+        print("ACTION REQUIRED: 若确认丢弃这些改动 / 强制删除未合并分支，请使用 --force 重新执行。")
 
 
 def remove_worktree(
     main_repo: Path,
     target: Path,
     branch: str | None,
-    force: bool,
+    force_remove: bool,
+    force_branch: bool,
     keep_branch: bool,
     dry_run: bool,
 ) -> None:
     remove_cmd = ["worktree", "remove"]
-    if force:
+    if force_remove:
         remove_cmd.append("--force")
     remove_cmd.append(str(target))
 
     branch_cmd: list[str] | None = None
     if branch and not keep_branch:
-        branch_cmd = ["branch", "-D" if force else "-d", branch]
+        branch_cmd = ["branch", "-D" if force_branch else "-d", branch]
 
     print(f"Repository: {main_repo}")
     print(f"Target: {target}")
@@ -206,28 +231,51 @@ def main(argv: list[str]) -> int:
         main_repo = resolve_main_repo(Path(args.repo).expanduser().resolve())
         target = Path(args.target_dir).expanduser().resolve()
         entries = parse_worktree_list(main_repo)
+        entry = find_target_entry(entries, target)
+        if entry is None:
+            raise WorktreeError(f"目标不是该仓库已注册的 worktree：{target}")
+        if main_worktree_path(entries, main_repo) == target:
+            print_precheck_report([("main_worktree", "拒绝清理主 worktree，--force 也不放行")])
+            return EXIT_PRECHECK
+
+        try:
+            sync_actions, has_baseline = plan_sync(main_repo, target)
+        except (WorktreeError, OSError) as exc:
+            print_precheck_report([("config_sync_error", str(exc))])
+            return EXIT_PRECHECK
+        print_sync_plan(sync_actions, has_baseline)
+        conflicts = [action for action in sync_actions if action.action == "CONFLICT"]
+        if conflicts:
+            detail = ", ".join(action.relative_path for action in conflicts[:10])
+            print_precheck_report([("config_sync_conflict", detail)])
+            return EXIT_PRECHECK
 
         if args.force:
-            entry = find_target_entry(entries, target)
-            if entry is None:
-                raise WorktreeError(f"目标不是该仓库已注册的 worktree：{target}")
-            if main_worktree_path(entries, main_repo) == target:
-                # 主 worktree 即使 --force 也不允许删
-                print_precheck_report([("main_worktree", "拒绝清理主 worktree，--force 也不放行")])
-                return EXIT_PRECHECK
             branch = entry.get("branch")
+            managed_dirty = bool(worktree_dirty_paths(target)[0])
         else:
-            failures, entry = run_prechecks(main_repo, target, entries, args.keep_branch)
+            failures, entry, managed_dirty = run_prechecks(main_repo, target, entries, args.keep_branch)
             if failures:
                 print_precheck_report(failures)
                 return EXIT_PRECHECK
             branch = entry.get("branch") if entry else None
 
+        if args.dry_run:
+            print("Dry run: 不执行配置同步。")
+        else:
+            try:
+                apply_sync(main_repo, target, sync_actions)
+            except WorktreeError as exc:
+                print_precheck_report([("config_sync_error", str(exc))])
+                return EXIT_PRECHECK
+            print("SYNCED managed configuration")
+
         remove_worktree(
             main_repo=main_repo,
             target=target,
             branch=branch,
-            force=args.force,
+            force_remove=args.force or managed_dirty,
+            force_branch=args.force,
             keep_branch=args.keep_branch,
             dry_run=args.dry_run,
         )

@@ -1,7 +1,7 @@
 {
   "name": "git-worktree-helper",
-  "version": "2.0.0",
-  "description": "Git worktree 辅助工具：创建 worktree 并同步本地代理与项目配置；清理已用完的 worktree 及其分支（带预检与确认流程）。",
+  "version": "2.1.0",
+  "description": "Git worktree 辅助工具：创建 worktree 并同步本地代理与项目配置；清理前安全回收配置变更，再删除 worktree 及其分支。",
   "author": {
     "name": "sen"
   }

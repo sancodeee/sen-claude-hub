@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import argparse
 import shutil
-import subprocess
 import sys
 from pathlib import Path
+
+from worktree_common import WorktreeError, run_git
 
 
 COPY_PATHS = [
@@ -18,25 +19,6 @@ COPY_PATHS = [
     "AGENTS.md",
     ".java-local.properties",
 ]
-
-
-class WorktreeError(Exception):
-    """Raised for expected user-facing failures."""
-
-
-def run_git(repo: Path, args: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(
-        ["git", *args],
-        cwd=repo,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    if check and result.returncode != 0:
-        detail = result.stderr.strip() or result.stdout.strip()
-        raise WorktreeError(detail or f"git {' '.join(args)} failed")
-    return result
 
 
 def resolve_repo(path: Path) -> Path:
@@ -148,6 +130,12 @@ def main(argv: list[str]) -> int:
         copy_target = target if not args.dry_run else target
         for message in copy_config_paths(repo, copy_target, args.dry_run):
             print(message)
+
+        if not args.dry_run:
+            from config_sync import write_baseline
+
+            baseline = write_baseline(target)
+            print(f"BASELINE {baseline}")
 
         print("Done")
         return 0
