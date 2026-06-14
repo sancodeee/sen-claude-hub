@@ -1,0 +1,4 @@
+interface:
+  display_name: "TripForge"
+  short_description: "调研并生成完整、可执行的移动端 HTML 旅行攻略报告"
+  default_prompt: "Use $trip-forge to create a complete HTML travel plan for my trip."

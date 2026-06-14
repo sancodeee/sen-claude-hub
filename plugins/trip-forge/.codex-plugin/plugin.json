@@ -1,0 +1,26 @@
+{
+  "name": "trip-forge",
+  "version": "1.0.0",
+  "description": "Generate thoroughly researched, executable travel plans as self-contained HTML reports.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "TripForge",
+    "shortDescription": "Generate complete, mobile-friendly HTML travel plans.",
+    "longDescription": "Research current travel information and create a relaxed, weather-aware, executable itinerary as a complete self-contained HTML report.",
+    "developerName": "sen",
+    "category": "Productivity",
+    "capabilities": [
+      "Travel research",
+      "Weather-aware itinerary planning",
+      "Self-contained HTML reports"
+    ],
+    "defaultPrompt": [
+      "Create a complete HTML travel plan for my next trip.",
+      "Research my destination and build a weather-aware itinerary.",
+      "Generate a mobile-friendly travel report with backup plans."
+    ]
+  }
+}

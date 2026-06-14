@@ -49,6 +49,12 @@
       "description": "Git worktree 辅助工具：创建 worktree 并同步本地代理与项目配置；清理前安全回收配置变更，再删除 worktree 及其分支。",
       "source": "./plugins/git-worktree-helper",
       "version": "2.1.0"
+    },
+    {
+      "name": "trip-forge",
+      "description": "调研并生成完整、自包含、移动端优先的 HTML 旅行攻略报告。",
+      "source": "./plugins/trip-forge",
+      "version": "1.0.0"
     }
   ]
 }
