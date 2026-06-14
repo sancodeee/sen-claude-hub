@@ -1,6 +1,6 @@
 {
   "name": "trip-forge",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generate thoroughly researched, executable travel plans as self-contained HTML reports.",
   "author": {
     "name": "sen"
