@@ -206,9 +206,9 @@
 <!-- ============ 维度1 · 行程表（概览） ============ -->
 <section id="d1">
   <div class="sec-head"><div class="sec-num">1</div><h2>极简行程表</h2></div>
-  <p class="sec-sub">每天不排满，留足吃饭/喝咖啡/临时调整。可去可不去的标「可选」。细节见下方景点详情卡。</p>
+  <p class="sec-sub">每天不排满，留足吃饭/喝咖啡/临时调整。可去可不去的标「可选」。细节见下方景点详情卡。三餐随动线落进表内。</p>
 
-  <!-- 每天复制一段：h3 标题 + 一张 table。天气依赖/人流/雨天替代为必填列 -->
+  <!-- 每天复制一段：h3 标题 + 一张 table。天气依赖/人流/雨天替代为必填列。每天表内含午餐、晚餐行（店/区域+人均），在途解决的注明即可 -->
   <h3><span class="dot"></span>Day 1 · {{日期 周几}} — {{当天主题}}</h3>
   <div class="tbl-wrap">
   <table>
@@ -216,7 +216,9 @@
     <thead><tr><th>时段</th><th>安排</th><th>天气依赖</th><th>建议交通</th><th>耗时/游玩</th><th>人流提示</th><th>雨天替代</th></tr></thead>
     <tbody>
       <tr><td><span class="slot">上午</span></td><td>{{安排}} <span class="badge b-check">⚠️</span></td><td><span class="badge w-weak">🏠</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
+      <tr><td><span class="slot">午餐</span></td><td>{{店名/类型 · 街区 · 招牌菜 · 人均}}（详见吃喝指南）<span class="badge b-check">⚠️</span></td><td><span class="badge w-weak">🏠</span></td><td>{{从上一点位走法+耗时}}</td><td>约{{用餐时长}}</td><td>{{饭点排队提示}}</td><td>{{室内不受影响/平替店}}</td></tr>
       <tr><td><span class="slot">下午</span></td><td>{{安排}}</td><td><span class="badge w-mid">⛅</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
+      <tr><td><span class="slot">晚餐</span></td><td>{{店名/类型 · 街区 · 招牌菜 · 人均}}（详见吃喝指南）</td><td><span class="badge w-weak">🏠</span></td><td>{{走法+耗时}}</td><td>约{{用餐时长}}</td><td>{{饭点排队提示}}</td><td>{{室内不受影响/平替店}}</td></tr>
       <tr><td><span class="slot">晚上</span></td><td>{{安排}} <span class="opt">可选</span></td><td><span class="badge w-strong">☀️</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
     </tbody>
   </table>
