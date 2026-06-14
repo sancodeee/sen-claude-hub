@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<!--
+  ===========================================================================
+  TripForge 旅行攻略报告 · 固化模版（设计系统 + 组件库 + 整份示例骨架）
+  ===========================================================================
+  使用方式（给生成模型）：
+  1. 本文件是「骨架」，不是成品。把所有 【方括号占位】 和 {{占位}} 替换为
+     联网核实后的真实内容；替换完成后，报告里不得残留任何占位符或本注释。
+  2. CSS 设计系统（<style> 内）与品牌配色（:root 变量）= TripForge 品牌识别，
+     原样保留，不要改色、不要外链。所有报告统一这套视觉。
+  3. 组件可复制/增减以适配行程：
+     - 每个核心景点复制一张 .card.spot（四问写全）；
+     - 每天复制一段行程表 + 标题；
+     - 每条避坑复制一个 .pit；B 计划每条复制一个 .pb-item；以此类推。
+  4. 角标含义固定：置信度 ✅稳定 / ⚠️需确认 / ❓不确定；
+     天气依赖 ☀️强 / ⛅中 / 🏠弱。易变信息就近挂角标，并汇入文末来源附录。
+  5. 六个维度 + 景点详情卡 + 来源附录全部保留，不得删节或压缩。
+  ===========================================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{目的地}} · {{天数}}攻略 · TripForge</title>
+<style>
+  /* ===== TripForge 品牌设计系统（固定，勿改色/勿外链） ===== */
+  :root{
+    --sea:#0f5d6e;          /* 深海蓝绿 · 主色 */
+    --sea-deep:#0a3d49;
+    --sea-light:#1f8294;
+    --foam:#e8f3f2;         /* 海沫底 */
+    --sand:#f6f1e7;         /* 沙白 · 页底 */
+    --sand-warm:#efe6d3;
+    --coral:#e0734f;        /* 落日珊瑚橘 · 签名强调色 */
+    --coral-soft:#f4d9cd;
+    --ink:#22302f;
+    --ink-soft:#5a6a68;
+    --line:#d8d0c0;
+    --green:#3f7d57;  --green-bg:#e4f0e8;   /* ✅ 稳定 */
+    --amber:#c98a1e;  --amber-bg:#fbf0d8;   /* ⚠️ 需确认 */
+    --red:#c0492f;    --red-bg:#f8e2db;     /* ❓ 不确定 */
+    --shadow:0 2px 14px rgba(15,93,110,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-text-size-adjust:100%}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--sand);color:var(--ink);line-height:1.72;font-size:16px;padding-bottom:60px}
+  /* hero / 出行速览 */
+  header.hero{background:linear-gradient(165deg,var(--sea-deep),var(--sea) 55%,var(--sea-light));color:#fff;padding:30px 20px 26px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-40px;bottom:-50px;width:200px;height:200px;background:radial-gradient(circle,var(--coral),transparent 68%);opacity:.45;border-radius:50%}
+  .hero .kicker{font-size:12px;letter-spacing:.32em;text-transform:uppercase;opacity:.8;font-weight:600}
+  .hero h1{font-size:30px;line-height:1.25;margin:8px 0 4px;font-weight:800}
+  .hero h1 small{display:block;font-size:14px;font-weight:500;opacity:.85;margin-top:6px}
+  .snapshot{margin-top:20px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:4px 0;position:relative;z-index:2}
+  .snap-row{display:flex;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.14);font-size:14.5px;align-items:baseline}
+  .snap-row:last-child{border-bottom:none}
+  .snap-row .lbl{flex:0 0 76px;opacity:.78;font-size:12.5px}
+  .snap-row .val{flex:1;font-weight:600}
+  .snap-row .val .hl{color:var(--coral-soft)}
+  /* nav */
+  nav.toc{position:sticky;top:0;z-index:50;background:rgba(246,241,231,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 8px;display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav.toc::-webkit-scrollbar{display:none}
+  nav.toc a{flex:0 0 auto;font-size:13px;font-weight:600;color:var(--sea);text-decoration:none;padding:7px 13px;border:1px solid var(--line);border-radius:20px;background:#fff;white-space:nowrap}
+  nav.toc a:active{background:var(--sea);color:#fff}
+  /* section */
+  section{padding:30px 18px 8px;max-width:760px;margin:0 auto}
+  .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .sec-num{flex:0 0 auto;width:38px;height:38px;border-radius:11px;background:var(--sea);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;box-shadow:var(--shadow)}
+  .sec-head h2{font-size:22px;font-weight:800;line-height:1.2}
+  .sec-sub{color:var(--ink-soft);font-size:13.5px;margin:2px 0 18px;padding-left:50px}
+  h3{font-size:17px;font-weight:700;margin:24px 0 10px;color:var(--sea-deep);display:flex;align-items:center;gap:8px}
+  h3 .dot{width:7px;height:7px;border-radius:50%;background:var(--coral);flex:0 0 auto}
+  p{margin:10px 0}
+  /* legend / 角标说明 */
+  .legend{background:var(--foam);border:1px solid #cfe3e1;border-radius:14px;padding:13px 15px;margin:14px 0 4px;font-size:13px;display:flex;flex-wrap:wrap;gap:9px 16px}
+  .legend b{display:block;width:100%;font-size:12px;letter-spacing:.08em;color:var(--sea);margin-bottom:2px;text-transform:uppercase}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  /* badges */
+  .badge{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:20px;line-height:1.5;white-space:nowrap}
+  .b-stable{background:var(--green-bg);color:var(--green)}
+  .b-check{background:var(--amber-bg);color:var(--amber)}
+  .b-unsure{background:var(--red-bg);color:var(--red)}
+  .w-strong{background:#fdeede;color:#c2611c}
+  .w-mid{background:#eef0e9;color:#6c7558}
+  .w-weak{background:#e6eef3;color:#3f6f8c}
+  /* table */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:14px -18px;padding:0 18px}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+  caption{text-align:left;font-size:13px;color:var(--ink-soft);padding:0 2px 8px;caption-side:top}
+  th{background:var(--sea-deep);color:#fff;font-weight:600;text-align:left;padding:10px 11px;font-size:12.5px;vertical-align:top;white-space:nowrap}
+  td{padding:10px 11px;border-bottom:1px solid #eee;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tbody tr:nth-child(even){background:#faf8f3}
+  td .slot{font-weight:700;color:var(--sea);white-space:nowrap}
+  .opt{font-size:11px;background:var(--sand-warm);color:var(--ink-soft);padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px}
+  /* card / 结论卡 / 景点卡 / 慢时光卡 */
+  .card{background:#fff;border-radius:16px;padding:18px;margin:14px 0;box-shadow:var(--shadow);border:1px solid #efe9dc}
+  .card.spot{border-left:5px solid var(--sea)}
+  .verdict{background:var(--sea);color:#fff;border-radius:12px;padding:13px 16px;margin:14px 0;font-size:14.5px;font-weight:600;display:flex;gap:9px;align-items:flex-start}
+  .verdict::before{content:"✓";flex:0 0 auto;font-weight:800;font-size:16px}
+  .card h4{font-size:17px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card .meta{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px}
+  .qa dt{font-weight:700;color:var(--sea-deep);font-size:13px;margin-top:9px;display:flex;align-items:center;gap:6px}
+  .qa dt::before{content:"";width:5px;height:5px;background:var(--coral);border-radius:50%;flex:0 0 auto}
+  .qa dd{margin:2px 0 0 11px;color:var(--ink);font-size:14px}
+  .hero-slow{background:linear-gradient(150deg,var(--sea-deep),var(--sea) 70%);color:#fff;border-radius:20px;padding:22px 20px;margin:18px 0;position:relative;overflow:hidden;box-shadow:0 6px 22px rgba(10,61,73,.3)}
+  .hero-slow::before{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;background:radial-gradient(circle,var(--coral),transparent 70%);opacity:.6;border-radius:50%}
+  .hero-slow .tag{font-size:11px;letter-spacing:.28em;text-transform:uppercase;opacity:.85;font-weight:700;position:relative}
+  .hero-slow h4{font-size:21px;font-weight:800;margin:7px 0 8px;color:#fff;position:relative}
+  .hero-slow p{font-size:14px;opacity:.95;position:relative;margin:8px 0}
+  .hero-slow .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px;position:relative}
+  .hero-slow .chips span{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);border-radius:18px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  /* 避坑 */
+  .pit{background:#fff;border-radius:14px;padding:15px 16px;margin:13px 0;box-shadow:var(--shadow);border-left:5px solid var(--red)}
+  .pit .no{font-weight:800;color:var(--red);font-size:15px;margin-bottom:8px;display:flex;align-items:flex-start;gap:7px}
+  .pit .no::before{content:"⊘";font-size:16px;flex:0 0 auto;line-height:1.4}
+  .pit dt{font-weight:700;color:var(--ink-soft);font-size:12px;margin-top:8px}
+  .pit dd{margin:1px 0 0;color:var(--ink);font-size:13.5px}
+  .pit .do{background:var(--green-bg);border-radius:9px;padding:8px 11px;margin-top:10px;font-size:13.5px}
+  .pit .do b{color:var(--green)}
+  /* 吃喝 */
+  .eat{background:#fff;border-radius:14px;padding:15px 16px;margin:12px 0;box-shadow:var(--shadow);border-top:4px solid var(--coral)}
+  .eat .cat{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--coral);text-transform:uppercase;margin-bottom:5px}
+  .eat h4{font-size:16px;font-weight:700;margin-bottom:7px}
+  .eat ul{list-style:none;font-size:13.5px}
+  .eat li{padding:5px 0 5px 18px;position:relative;border-bottom:1px dashed #eee}
+  .eat li:last-child{border-bottom:none}
+  .eat li::before{content:"›";position:absolute;left:3px;color:var(--coral);font-weight:800}
+  .eat li b{color:var(--sea-deep)}
+  .tipbox{background:var(--amber-bg);border:1px solid #f0dcae;border-radius:12px;padding:13px 15px;margin:14px 0;font-size:13.5px}
+  .tipbox b{color:var(--amber)}
+  .callout{background:var(--coral-soft);border-radius:14px;padding:15px 17px;margin:16px 0;font-size:14px;border-left:5px solid var(--coral)}
+  .callout b{color:#b14e2e}
+  /* B 计划 */
+  .plan-b{counter-reset:pb;margin-top:6px}
+  .pb-item{background:#fff;border-radius:13px;padding:14px 15px 14px 52px;margin:11px 0;box-shadow:var(--shadow);position:relative;font-size:14px;border:1px solid #efe9dc}
+  .pb-item::before{counter-increment:pb;content:counter(pb);position:absolute;left:14px;top:14px;width:26px;height:26px;background:var(--sea);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+  .pb-item b{color:var(--sea-deep)}
+  .pb-item .arrow{color:var(--coral);font-weight:800}
+  /* 物资 */
+  .pack{display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px}
+  .pack-card{background:#fff;border-radius:13px;padding:14px 16px;box-shadow:var(--shadow);border-left:4px solid var(--sea-light)}
+  .pack-card h4{font-size:14.5px;font-weight:800;color:var(--sea-deep);margin-bottom:5px}
+  .pack-card p{font-size:13.5px;margin:0}
+  .checklist{background:linear-gradient(155deg,var(--sea-deep),var(--sea));color:#fff;border-radius:18px;padding:20px;margin-top:18px;box-shadow:var(--shadow)}
+  .checklist h3{color:#fff;font-size:17px;margin:0 0 12px}
+  .checklist ol{list-style:none;counter-reset:ck;font-size:14px}
+  .checklist li{counter-increment:ck;padding:8px 0 8px 34px;position:relative;border-bottom:1px solid rgba(255,255,255,.13)}
+  .checklist li:last-child{border-bottom:none}
+  .checklist li::before{content:"☐ " counter(ck);position:absolute;left:0;font-weight:700;opacity:.85;font-size:12.5px;top:9px}
+  /* 来源附录 + 杂项 */
+  .src{font-size:11.5px;color:#9a9485;margin-top:3px}
+  footer{text-align:center;padding:34px 20px 10px;color:var(--ink-soft);font-size:12px;line-height:1.7}
+  footer b{color:var(--sea)}
+  @media(min-width:620px){.pack{grid-template-columns:1fr 1fr}.hero h1{font-size:34px}}
+</style>
+</head>
+<body>
+
+<!-- ============ HERO / 出行速览（一屏看全） ============ -->
+<header class="hero">
+  <div class="kicker">Private Travel Concierge · TripForge</div>
+  <h1>{{目的地}} · {{天数}}{{风格一词，如 松弛行}}
+    <small>{{一句话主题}} · {{同行人}} · {{出发城市}}往返</small>
+  </h1>
+  <div class="snapshot">
+    <div class="snap-row"><span class="lbl">目的地</span><span class="val">{{目的地 + 核心片区}}</span></div>
+    <div class="snap-row"><span class="lbl">日期</span><span class="val">{{出行日期}}<span class="hl"> · {{天数}}</span></span></div>
+    <div class="snap-row"><span class="lbl">天气概况</span><span class="val">{{天气概况}} <span class="badge b-check">⚠️出行前查</span></span></div>
+    <div class="snap-row"><span class="lbl">住宿片区</span><span class="val"><span class="hl">{{住宿片区}}</span></span></div>
+    <div class="snap-row"><span class="lbl">核心安排</span><span class="val">{{每天核心一句}}</span></div>
+    <div class="snap-row"><span class="lbl">慢时光</span><span class="val">{{慢时光放哪天/哪个点}}</span></div>
+  </div>
+</header>
+
+<!-- ============ 锚点导航 ============ -->
+<nav class="toc">
+  <a href="#how">怎么用</a>
+  <a href="#d1">行程表</a>
+  <a href="#spots">景点详情</a>
+  <a href="#weather">看天调度</a>
+  <a href="#traffic">交通住宿</a>
+  <a href="#pit">避坑</a>
+  <a href="#eat">吃喝</a>
+  <a href="#planb">B计划</a>
+  <a href="#pack">物资</a>
+  <a href="#src">来源</a>
+</nav>
+
+<!-- ============ 怎么用 / 角标说明（固定区块） ============ -->
+<section id="how">
+  <div class="legend">
+    <b>看懂这份攻略的角标</b>
+    <span><span class="badge b-stable">✅ 稳定</span>常识/长期固定</span>
+    <span><span class="badge b-check">⚠️ 需确认</span>价格/时间/班次，出行前查</span>
+    <span><span class="badge b-unsure">❓ 不确定</span>务必二次核实</span>
+    <span style="width:100%;height:1px;background:#cfe3e1;margin:2px 0"></span>
+    <span><span class="badge w-strong">☀️ 强</span>靠晴天好光（看海/日落/远眺）</span>
+    <span><span class="badge w-mid">⛅ 中</span>阴天也能去但减分</span>
+    <span><span class="badge w-weak">🏠 弱</span>室内/不挑天气</span>
+  </div>
+  <div class="callout"><b>一句话定调：</b>{{本行程取舍主线，如：每天只锁 2 个核心，最值得保的是某段慢时光}}</div>
+  <p class="src">信息核实日期：{{YYYY年M月D日}}。来源见文末附录；价格与班次随时浮动，以当日官方为准。</p>
+</section>
+
+<!-- ============ 维度1 · 行程表（概览） ============ -->
+<section id="d1">
+  <div class="sec-head"><div class="sec-num">1</div><h2>极简行程表</h2></div>
+  <p class="sec-sub">每天不排满，留足吃饭/喝咖啡/临时调整。可去可不去的标「可选」。细节见下方景点详情卡。</p>
+
+  <!-- 每天复制一段：h3 标题 + 一张 table。天气依赖/人流/雨天替代为必填列 -->
+  <h3><span class="dot"></span>Day 1 · {{日期 周几}} — {{当天主题}}</h3>
+  <div class="tbl-wrap">
+  <table>
+    <caption>{{当天一句话定调，如：抵达不远行，老城热身}}</caption>
+    <thead><tr><th>时段</th><th>安排</th><th>天气依赖</th><th>建议交通</th><th>耗时/游玩</th><th>人流提示</th><th>雨天替代</th></tr></thead>
+    <tbody>
+      <tr><td><span class="slot">上午</span></td><td>{{安排}} <span class="badge b-check">⚠️</span></td><td><span class="badge w-weak">🏠</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
+      <tr><td><span class="slot">下午</span></td><td>{{安排}}</td><td><span class="badge w-mid">⛅</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
+      <tr><td><span class="slot">晚上</span></td><td>{{安排}} <span class="opt">可选</span></td><td><span class="badge w-strong">☀️</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <!-- … Day 2、Day 3 … 按天数复制上面整段 … -->
+
+  <!-- 二选一/关键取舍用结论卡（决断，不模棱两可） -->
+  <div class="verdict">{{关键取舍结论，如：D3 选 A 不选 B，因为……}}</div>
+</section>
+
+<!-- ============ 维度1 · 景点详情卡（每个核心景点的四问，不得省略） ============ -->
+<section id="spots">
+  <div class="sec-head"><div class="sec-num">★</div><h2>景点详情卡</h2></div>
+  <p class="sec-sub">行程表只放概览；每个核心点位在此回答「为什么去 / 怎么去 / 玩多久 / 怎么避坑」。</p>
+
+  <!-- 每个核心景点复制一张 .card.spot -->
+  <div class="card spot">
+    <h4>{{景点名}} <span class="badge b-check">⚠️ 票价/时间</span></h4>
+    <div class="meta">{{一句定位}}</div>
+    <dl class="qa">
+      <dt>为什么去</dt><dd>{{亮点 + 为什么适合本次同行人}}</dd>
+      <dt>怎么去</dt><dd>{{从住宿片区/上一点出发的方式 + 预计耗时}}</dd>
+      <dt>玩多久</dt><dd>{{建议时长 + 最佳时段}}</dd>
+      <dt>怎么避坑</dt><dd>{{避人流具体方法 / 是否易排队 / 平替 / 取舍提醒}}</dd>
+    </dl>
+  </div>
+
+  <!-- 全程亮点：慢时光（唯一一段刻意慢下来的安排） -->
+  <div class="hero-slow">
+    <div class="tag">★ The One Slow Moment</div>
+    <h4>{{慢时光地点}} · {{时段}} 60–90 分钟</h4>
+    <p>{{现场氛围描述：安静、舒服、真实自然感，不追出片}}</p>
+    <p style="font-size:13px;opacity:.9"><b>为什么是这天这个点：</b>{{理由}} <b>判断开关：</b>{{哪天最晴就挪到哪天傍晚}}</p>
+    <div class="chips">
+      <span>🕖 {{最佳时间}} ⚠️当日查</span>
+      <span>📍 {{推荐点位}}</span>
+      <span>🚶 {{强度，如 无需爬山}}</span>
+      <span>☕ {{装备/小贴士}}</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 维度1+ · 看天调度 ============ -->
+<section id="weather">
+  <div class="sec-head"><div class="sec-num">⛅</div><h2>看天调度 · 把天气前置</h2></div>
+  <p class="sec-sub">好天用在刀刃，坏天换室内，并给一个对调开关。</p>
+  <div class="tipbox"><b>⚠️ 第一步：</b>{{出发前查哪几天晴雨，默认强依赖点位放最晴那天}}</div>
+  <div class="card">
+    <dl class="qa">
+      <dt>① 好天放刀刃上</dt><dd>{{把 ☀️ 强依赖点位集中放最晴那天}}</dd>
+      <dt>② 坏天换室内</dt><dd>{{阴/雨天主推 🏠 弱依赖：室内馆/老街/咖啡/美食}}</dd>
+      <dt>③ 对调开关</dt><dd>{{现场与预报不符时，哪两天对调 + 判断标准}}</dd>
+    </dl>
+  </div>
+  <div class="callout"><b>⚠️ 阴天 ≠ 晴天。</b>{{灰天看海/日落打折，遇阴显式换不挑光线安排}}</div>
+</section>
+
+<!-- ============ 维度2 · 交通住宿（直接给结论） ============ -->
+<section id="traffic">
+  <div class="sec-head"><div class="sec-num">2</div><h2>交通住宿最优解</h2></div>
+  <p class="sec-sub">直接给结论，不模棱两可。</p>
+
+  <h3><span class="dot"></span>跨城：{{出发城市}} → {{目的地}}</h3>
+  <div class="card">
+    <div class="verdict" style="margin-top:0">{{跨城结论，如：首选高铁直达，约 Xh，市区到市区}}</div>
+    <dl class="qa">
+      <dt>推荐车次/航班（务必当日核实）<span class="badge b-check">⚠️</span></dt>
+      <dd>{{去程具体车次+时刻}}；{{返程具体车次+时刻}}。<span class="src">来源：{{}}，核验 {{日期}}</span></dd>
+      <dt>高铁 / 飞机 / 自驾 / 租车各适合什么</dt><dd>{{逐一对比 + 最推荐}}</dd>
+    </dl>
+  </div>
+
+  <h3><span class="dot"></span>当地交通</h3>
+  <div class="card"><dl class="qa">
+    <dt>怎么走最省心</dt><dd>{{打车/公交/地铁/自驾结论 + 每段建议方式与耗时}}</dd>
+  </dl></div>
+
+  <h3><span class="dot"></span>住哪个片区</h3>
+  <div class="card"><dl class="qa">
+    <dt>推荐片区（为什么适配本次同行人）</dt><dd>{{具体片区 + 步行可达海/饭/散步}}</dd>
+    <dt>选酒店原则</dt><dd>{{离车站/海/老城的距离建议}}</dd>
+    <dt>不推荐片区及原因</dt><dd>{{}}</dd>
+  </dl></div>
+</section>
+
+<!-- ============ 维度3 · 避坑 ============ -->
+<section id="pit">
+  <div class="sec-head"><div class="sec-num">3</div><h2>避坑与防雷清单</h2></div>
+  <p class="sec-sub">每条都给到具体动作，不说「建议提前规划」这种废话。</p>
+
+  <!-- 每条避坑复制一个 .pit -->
+  <div class="pit">
+    <div class="no">{{不建议做的事}}</div>
+    <dl>
+      <dt>原因</dt><dd>{{}}</dd>
+      <dt>替代方案</dt><dd>{{}}</dd>
+    </dl>
+    <div class="do"><b>直接照做：</b>{{一个具体动作：几点去/订哪家/走哪条路}}</div>
+  </div>
+</section>
+
+<!-- ============ 维度4 · 吃喝 ============ -->
+<section id="eat">
+  <div class="sec-head"><div class="sec-num">4</div><h2>本地人吃喝指南</h2></div>
+  <p class="sec-sub">重点是「吃什么类型 + 去哪个区域」，并教你判断一家店靠不靠谱。</p>
+
+  <div class="tipbox"><b>怎么判断一家店靠谱：</b>{{本地人多/明码标价/在居民区而非景区门口/招牌硬菜}}</div>
+
+  <!-- 早餐/午晚餐/咖啡甜品/夜宵各复制一个 .eat；最后一个为「不建议吃」 -->
+  <div class="eat">
+    <div class="cat">{{分类，如 早餐}}</div>
+    <h4>{{吃什么类型}}</h4>
+    <ul>
+      <li><b>类型：</b>{{}}</li>
+      <li><b>去哪：</b>{{区域}}</li>
+      <li><b>参考店：</b>{{店名}} — {{为什么值得/点什么/是否易排队/平替}} <span class="badge b-check">⚠️</span></li>
+    </ul>
+  </div>
+  <div class="eat" style="border-top-color:var(--red)">
+    <div class="cat" style="color:var(--red)">不建议吃的类型</div>
+    <h4>这些直接跳过</h4>
+    <ul><li>{{类型 + 原因}}</li></ul>
+  </div>
+</section>
+
+<!-- ============ 维度5 · B计划 ============ -->
+<section id="planb">
+  <div class="sec-head"><div class="sec-num">5</div><h2>突发情况 B 计划</h2></div>
+  <p class="sec-sub">每条都能直接执行，不只说「改去商场」。</p>
+
+  <!-- 8 种情况各一个 .pb-item -->
+  <div class="plan-b">
+    <div class="pb-item"><b>下大雨</b> <span class="arrow">→</span> {{可执行替代路线}}</div>
+    <div class="pb-item"><b>太热/太冷/风太大</b> <span class="arrow">→</span> {{}}</div>
+    <div class="pb-item"><b>核心景点临时关闭</b> <span class="arrow">→</span> {{}}</div>
+    <div class="pb-item"><b>人太多排队</b> <span class="arrow">→</span> {{}}</div>
+    <div class="pb-item"><b>同行人累了</b> <span class="arrow">→</span> {{}}</div>
+    <div class="pb-item"><b>临时想看日出/日落/安静喝咖啡</b> <span class="arrow">→</span> {{}}</div>
+    <div class="pb-item"><b>餐厅排队太久</b> <span class="arrow">→</span> {{}}</div>
+    <div class="pb-item"><b>交通延误/行程被打乱</b> <span class="arrow">→</span> {{}}</div>
+  </div>
+
+  <h3><span class="dot"></span>天气适配表</h3>
+  <div class="tbl-wrap">
+  <table>
+    <caption>每种天气：不适合什么 / 改做什么 / 为什么。</caption>
+    <thead><tr><th>天气</th><th>不适合</th><th>改为安排</th><th>逻辑</th></tr></thead>
+    <tbody>
+      <tr><td><b>阴天/灰蒙蒙</b></td><td>{{}}</td><td>{{}}</td><td>这类体验不靠光线</td></tr>
+      <tr><td><b>大晴好光</b></td><td>—</td><td><b>{{优先把强依赖点位顶上来}}</b></td><td>强依赖点位用在刀刃上</td></tr>
+      <tr><td><b>大风</b></td><td>{{}}</td><td>{{}}</td><td>安全+舒适</td></tr>
+      <tr><td><b>高温暴晒</b></td><td>{{}}</td><td>{{}}</td><td>避晒，好景留软光</td></tr>
+      <tr><td><b>雨</b></td><td>{{}}</td><td>{{}}</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 维度6 · 物资 ============ -->
+<section id="pack">
+  <div class="sec-head"><div class="sec-num">6</div><h2>行前物资 · 一句话总结</h2></div>
+  <p class="sec-sub">能直接照着收拾。{{当地气候一句}}</p>
+  <div class="pack">
+    <div class="pack-card"><h4>👕 衣物</h4><p>{{}}</p></div>
+    <div class="pack-card"><h4>🪪 证件</h4><p>{{}}</p></div>
+    <div class="pack-card"><h4>💊 药品</h4><p>{{}}</p></div>
+    <div class="pack-card"><h4>🔌 电子</h4><p>{{}}</p></div>
+    <div class="pack-card"><h4>🧴 防晒雨具</h4><p>{{}}</p></div>
+    <div class="pack-card"><h4>🐚 当地特殊</h4><p>{{}}</p></div>
+    <div class="pack-card"><h4>👫 同行共享</h4><p>{{}}</p></div>
+  </div>
+  <div class="checklist">
+    <h3>✅ 出发前一天检查清单（≤10 条）</h3>
+    <ol>
+      <li>{{}}</li>
+      <!-- … 控制在 10 条以内 … -->
+    </ol>
+  </div>
+</section>
+
+<!-- ============ 附录 · 信息来源与核验日期（强制，不得省略） ============ -->
+<section id="src">
+  <div class="sec-head"><div class="sec-num">≡</div><h2>信息来源与核验日期</h2></div>
+  <p class="sec-sub">关键易变信息均可回溯下表；标 ⚠️/❓ 的请出行前再确认，勿当既定事实。</p>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>信息项</th><th>结论摘要</th><th>来源</th><th>核验日期</th><th>置信度</th></tr></thead>
+    <tbody>
+      <!-- 每条易变信息一行：票价/营业时间/班次/预约/天气… -->
+      <tr><td>{{信息项}}</td><td>{{结论}}</td><td>{{来源}}</td><td>{{日期}}</td><td><span class="badge b-check">⚠️</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>
+  <p><b>{{目的地}} · {{天数}}{{风格}}</b> · TripForge 定制</p>
+  <p>核实日期 {{日期}} · 标 ⚠️ 与 ❓ 的信息请出行前用官方渠道再确认一次。</p>
+  <p>{{一句温暖收尾}}</p>
+</footer>
+
+</body>
+</html>
