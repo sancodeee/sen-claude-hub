@@ -21,7 +21,7 @@
 | `byd-vehicle-scrape` | 1.0.0 | Data | 爬取比亚迪车型配置与价格数据并生成 MySQL SQL |
 | `jenkins-cli` | 1.0.0 | Productivity | 本机 Jenkins CLI 使用指南与高风险操作边界控制 |
 | `git-worktree-helper` | 2.1.0 | Productivity | 创建 / 清理 Git worktree 并同步本地代理与项目配置 |
-| `trip-forge` | 1.0.1 | Productivity | 调研并生成自包含、移动端优先的 HTML 旅行攻略报告 |
+| `trip-forge` | 1.1.0 | Productivity | 调研并生成自包含、移动端优先的 HTML 旅行攻略报告 |
 
 ## 🚀 快速开始
 
