@@ -264,16 +264,34 @@
 <!-- ============ 维度1+ · 看天调度 ============ -->
 <section id="weather">
   <div class="sec-head"><div class="sec-num">⛅</div><h2>看天调度 · 把天气前置</h2></div>
-  <p class="sec-sub">好天用在刀刃，坏天换室内，并给一个对调开关。</p>
-  <div class="tipbox"><b>⚠️ 第一步：</b>{{出发前查哪几天晴雨，默认强依赖点位放最晴那天}}</div>
+  <p class="sec-sub">先看逐日预报，再按天气把本趟景点对号入座。</p>
+
+  <!-- 1) 逐日天气表（给事实，每个出行日一行；多城市行程在「日期」后加「城市」列或每城一表） -->
+  <h3><span class="dot"></span>出行期逐日天气</h3>
+  <div class="tbl-wrap">
+  <table>
+    <caption>预报随时滚动，出发前 1–2 天务必复查 <span class="badge b-check">⚠️ 会变</span>｜核验日 {{核验日期}}</caption>
+    <thead><tr><th>日期</th><th>天气</th><th>气温</th><th>风力</th><th>降水</th><th>出行建议</th></tr></thead>
+    <tbody>
+      <tr><td>{{月/日 周X}}</td><td>{{天气现象，如 多云转小雨}}</td><td>{{高}}°/{{低}}°</td><td>{{风向风力，如 北风5-6级}}</td><td>{{降水概率% 或 —}}</td><td>{{一句话，如 ☀️海边/🏠室内/⚠️渡海慎}}</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="src">来源：{{天气源，如 中央气象台 / yr.no}}，核验 {{日期}}。</p>
+
+  <!-- 2) 本趟景点按天气分类（核心·全部列真实点位名，不要泛泛而谈；某档本趟没有就删该行） -->
+  <h3><span class="dot"></span>按天气挑景点（本趟点位对号入座）</h3>
   <div class="card">
     <dl class="qa">
-      <dt>① 好天放刀刃上</dt><dd>{{把 ☀️ 强依赖点位集中放最晴那天}}</dd>
-      <dt>② 坏天换室内</dt><dd>{{阴/雨天主推 🏠 弱依赖：室内馆/老街/咖啡/美食}}</dd>
-      <dt>③ 对调开关</dt><dd>{{现场与预报不符时，哪两天对调 + 判断标准}}</dd>
+      <dt><span class="badge w-strong">☀️ 晴天/好光首选</span></dt><dd>{{看海·日落·远眺·登高类的本趟具体点位名 + 一句为什么/建议放预报最晴的哪天}}</dd>
+      <dt><span class="badge w-mid">⛅ 阴天也能去</span></dt><dd>{{减分但不废的本趟点位 + 简短理由}}</dd>
+      <dt><span class="badge w-weak">🏠 阴雨 / 大风 → 室内不挑光</span></dt><dd>{{室内馆·老街·美食·咖啡等本趟点位}}</dd>
+      <dt>🌬️ / 🌡️ 大风·高温等极端</dt><dd>{{落成本趟具体做法，如 大风留城区背风看景、高温正午回酒店傍晚再出海；本趟无此风险可删}}</dd>
     </dl>
   </div>
-  <div class="callout"><b>⚠️ 阴天 ≠ 晴天。</b>{{灰天看海/日落打折，遇阴显式换不挑光线安排}}</div>
+
+  <!-- 3) 关键硬决策/对调：仅在本趟有具体看天定夺时才写；没有就整块删除，别凑空话 -->
+  <div class="callout"><b>⚠️ 关键决策：</b>{{触发(具体日期+阈值/现象) → 改法 → 何时判断；如 6/21 北风≥6级或船务停航/海事预警 → 不渡海转烟台B线 → 6/20 20:30 查船务+海事。无硬决策则删除本块}}</div>
 </section>
 
 <!-- ============ 维度2 · 交通住宿（直接给结论） ============ -->
@@ -349,31 +367,15 @@
   <div class="sec-head"><div class="sec-num">5</div><h2>突发情况 B 计划</h2></div>
   <p class="sec-sub">每条都能直接执行，不只说「改去商场」。</p>
 
-  <!-- 8 种情况各一个 .pb-item -->
+  <!-- 8 种情况各一个 .pb-item；天气类（下雨/大风/高温）的景点取舍统一见「看天调度」，此处只写非天气突发的可执行替代 -->
   <div class="plan-b">
-    <div class="pb-item"><b>下大雨</b> <span class="arrow">→</span> {{可执行替代路线}}</div>
-    <div class="pb-item"><b>太热/太冷/风太大</b> <span class="arrow">→</span> {{}}</div>
-    <div class="pb-item"><b>核心景点临时关闭</b> <span class="arrow">→</span> {{}}</div>
-    <div class="pb-item"><b>人太多排队</b> <span class="arrow">→</span> {{}}</div>
-    <div class="pb-item"><b>同行人累了</b> <span class="arrow">→</span> {{}}</div>
-    <div class="pb-item"><b>临时想看日出/日落/安静喝咖啡</b> <span class="arrow">→</span> {{}}</div>
-    <div class="pb-item"><b>餐厅排队太久</b> <span class="arrow">→</span> {{}}</div>
-    <div class="pb-item"><b>交通延误/行程被打乱</b> <span class="arrow">→</span> {{}}</div>
-  </div>
-
-  <h3><span class="dot"></span>天气适配表</h3>
-  <div class="tbl-wrap">
-  <table>
-    <caption>每种天气：不适合什么 / 改做什么 / 为什么。</caption>
-    <thead><tr><th>天气</th><th>不适合</th><th>改为安排</th><th>逻辑</th></tr></thead>
-    <tbody>
-      <tr><td><b>阴天/灰蒙蒙</b></td><td>{{}}</td><td>{{}}</td><td>这类体验不靠光线</td></tr>
-      <tr><td><b>大晴好光</b></td><td>—</td><td><b>{{优先把强依赖点位顶上来}}</b></td><td>强依赖点位用在刀刃上</td></tr>
-      <tr><td><b>大风</b></td><td>{{}}</td><td>{{}}</td><td>安全+舒适</td></tr>
-      <tr><td><b>高温暴晒</b></td><td>{{}}</td><td>{{}}</td><td>避晒，好景留软光</td></tr>
-      <tr><td><b>雨</b></td><td>{{}}</td><td>{{}}</td><td>—</td></tr>
-    </tbody>
-  </table>
+    <div class="pb-item"><b>核心景点临时关闭</b> <span class="arrow">→</span> {{同片区或同类型平替点位}}</div>
+    <div class="pb-item"><b>人太多排队</b> <span class="arrow">→</span> {{错峰时段 / 就近替代}}</div>
+    <div class="pb-item"><b>同行人累了</b> <span class="arrow">→</span> {{就近休整 / 删减点位}}</div>
+    <div class="pb-item"><b>临时想看日出/日落/安静喝咖啡</b> <span class="arrow">→</span> {{就近点位 + 时段}}</div>
+    <div class="pb-item"><b>餐厅排队太久</b> <span class="arrow">→</span> {{同片区平替店}}</div>
+    <div class="pb-item"><b>交通延误/行程被打乱</b> <span class="arrow">→</span> {{压缩或对调方案}}</div>
+    <div class="pb-item"><b>遇雨 / 大风 / 高温</b> <span class="arrow">→</span> 按天气取舍景点详见 <a href="#weather">看天调度</a></div>
   </div>
 </section>
 
