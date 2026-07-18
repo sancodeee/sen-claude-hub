@@ -1,6 +1,6 @@
 # TripForge 多 Agent 准确性增强协议
 
-本文件只在启用多 Agent 调研或最终核验时使用。它是 `SKILL.md` 的增强规则，不得替代、删除、弱化 `SKILL.md`、`template.md`、`sources.md` 中任何既有强制要求。
+本文件在两种情况下使用：① 满足 `SKILL.md`「多 Agent 增强模式」启用判据时的多 Agent 调研编排；② `SKILL.md` 步骤 6A 双重质检——质检无论是否启用多 Agent 调研都必须执行，无 subagent 环境按单 Agent 回退格式执行。它是 `SKILL.md` 的增强规则，不得替代、删除、弱化 `SKILL.md`、`template.md`、`sources.md` 中任何既有强制要求。
 
 ## 不可削弱边界
 
@@ -12,13 +12,13 @@
 
 - **Main Orchestrator（唯一主控）**：负责读规范、读来源、拆分调研任务、合并证据、事实裁决、选景排程、写 HTML、修复 Review / Verification 发现的问题，并对最终交付负责。
 - **Research Subagents（调研员）**：只做调研证据采集和结构化整理；不得写最终正文、不得生成 HTML、不得修改文件、不得把 UGC 单源线索当结论。
-- **Consistency Review Agent（内容一致性审查员）**：只检查结构完整性、行程动线、六维度完整性，以及餐饮 / 交通 / 天气 / 住宿之间是否矛盾；不得直接改 HTML。
-- **Final Verification Agent（最终核验员）**：作为交付闸门，只核验最终 HTML 与来源附录的事实、来源、置信度、正文-附录一致性；不得润色、补写或直接改文件。未给出“通过”时不得交付。
+- **Consistency Review Agent（内容一致性审查员）**：输入为最终 HTML 文件路径，在全新上下文中只读该文件；只检查结构完整性、行程动线、六维度完整性，以及餐饮 / 交通 / 天气 / 住宿之间是否矛盾；不得直接改 HTML。
+- **Final Verification Agent（最终核验员）**：作为交付闸门，输入为最终 HTML 文件路径 + 事实台账文件路径，在全新上下文中只读两者；逐条比对正文数值与台账、正文与来源附录的一致性，并对 3–5 条高风险易变信息（班次、票价、开放时间、预约规则）联网抽查复核；不得润色、补写或直接改文件。未给出“通过”时不得交付。
 - **单 Agent 回退核验**：当平台无独立 subagent 时，Main Orchestrator 必须按 Final Verification Agent 的同一输出格式完成最终自检，并显式标注为单 Agent 回退核验；不得省略任何事实、来源、置信度或正文-附录一致性检查。
 
 ## Research Subagent 分工
 
-Main Orchestrator 按需拆分以下调研任务；简单行程可不拆分，但准确性要求完全一致：
+Main Orchestrator 按信息域拆分以下调研任务（MECE：域内自洽、互不重叠，域内自行完成双源核验与置信度标注）；简单行程可合并类别，但准确性要求完全一致：
 
 - 天气 / 日出日落 / 潮汐。
 - 跨城交通 / 当地交通。
@@ -26,16 +26,29 @@ Main Orchestrator 按需拆分以下调研任务；简单行程可不拆分，�
 - 餐饮 / 住宿 / 本地生活。
 - 避坑 / UGC 线索甄别。
 
+互相独立的调研类别必须在同一批次**并行派发**，不得串行逐个等待。
+
+## Subagent 派发 Prompt 必含内容
+
+Research Subagent 是全新上下文冷启动的，看不到 `SKILL.md` 和 `sources.md`。派发 prompt 必须包含以下全部内容，缺一不可：
+
+1. **行程上下文**：目的地、出行日期与天数、同行人、预算、出发城市。
+2. **调研范围**：本 subagent 负责的信息类别及具体待查条目清单。
+3. **来源清单摘录**：`sources.md` 中对应类别的站点，含可信分级（🏛️ 官方 / 🛒 平台 / 💬 UGC）与访问方式标注（🌐 / 🔍 / 📱）。
+4. **省 token 铁律原文**：标 🔍 / 📱 的站点不要直抓官方 URL，改用 WebSearch + 精确查询词命中聚合结果，关键数字再回官方核对。
+5. **证据卡片格式**（下方格式原文）。
+6. **禁止事项**：不写正文、不生成 HTML、不修改文件、UGC 单源不作结论、无法核实标 `❓` 不编造。
+
 ## 证据卡片格式
 
-所有 Research Subagent 必须按下列证据卡片格式返回。缺任一关键字段的结论不得直接写入正文：
+所有 Research Subagent 必须按下列证据卡片格式返回。缺任一关键字段的结论不得直接写入正文；确无第二来源时「来源2」如实填「无（单源）」——此时置信度只能标 `⚠️` 或 `❓`，不得为凑格式编造来源：
 
 ```text
 信息项：
 结论：
 适用日期 / 地点：
 来源1：
-来源2：
+来源2：      # 确无第二来源时填「无（单源）」，置信度随之降为 ⚠️ / ❓
 来源类型：官方 / 平台 / UGC
 核验日期：
 置信度：✅ / ⚠️ / ❓
@@ -43,9 +56,11 @@ Main Orchestrator 按需拆分以下调研任务；简单行程可不拆分，�
 是否可写入正文：
 ```
 
-## 事实台账准入规则
+## 事实台账落盘与准入规则
 
-- Main Orchestrator 必须先把 subagent 结果合并为事实台账，再写正文；未进入事实台账的信息不得写入正文。
+- **台账是磁盘文件，不是对话记忆。** 位置：`travel-guides/<目的地>-<出行首日>-research.md`；schema 复用证据卡片字段（可表格化，与 `template.md` 来源附录表结构对齐，便于直接生成附录）。默认保留该文件供交付后回溯，用户可自行删除。
+- **照抄铁律**：分段生成阶段所有易变数值从台账文件照抄，禁凭记忆改写；台账中标 `⚠️` / `❓` 的信息不得在下游被升级为确定值。
+- Main Orchestrator 必须先把 subagent 结果合并落盘为事实台账，再写正文；未进入事实台账的信息不得写入正文。
 - 没有来源的结论无效；只有 UGC 来源的结论不得写成事实。
 - 易变信息不足两处来源时，必须标 `⚠️` 或 `❓`，不得标 `✅`。
 - 多来源冲突时，不得静默选择最方便的结论；必须记录冲突，并在正文或来源附录中体现处理方式。
@@ -54,12 +69,12 @@ Main Orchestrator 按需拆分以下调研任务；简单行程可不拆分，�
 ## 执行顺序
 
 1. Main Orchestrator 完整读取 `template.md`、`sources.md` 和本文件。
-2. Main Orchestrator 将本文件的角色边界、来源规则、证据卡片格式和禁用事项发送给 Research Subagents。
+2. Main Orchestrator 按「Subagent 派发 Prompt 必含内容」构造每个调研域的 prompt，并将互相独立的类别在同一批次并行派发。
 3. Research Subagents 只返回结构化证据卡片，不写正文、不生成 HTML、不修改文件。
-4. Main Orchestrator 建立事实台账，执行双源核验、UGC 降权、冲突处理和置信度裁决。
-5. Main Orchestrator 独立完成选景、排程、分段写入 HTML 和来源附录。
-6. Consistency Review Agent 输出一致性问题报告，Main Orchestrator 修复。
-7. Final Verification Agent 输出最终核验报告；若不通过，Main Orchestrator 修复后重新核验。
+4. Main Orchestrator 将证据合并落盘为事实台账文件，执行双源核验、UGC 降权、冲突处理和置信度裁决。
+5. Main Orchestrator 独立完成选景、排程、分段写入 HTML 和来源附录；易变数值从台账文件照抄。
+6. Consistency Review Agent（输入：HTML 文件路径）输出一致性问题报告，Main Orchestrator 修复。
+7. Final Verification Agent（输入：HTML 文件路径 + 台账文件路径，含高风险信息联网抽查）输出最终核验报告；若不通过，Main Orchestrator 修复后重新核验。
 
 ## Consistency Review 输出格式
 
@@ -105,6 +120,7 @@ Main Orchestrator 按需拆分以下调研任务；简单行程可不拆分，�
 出现任一情况，Consistency Review 或 Final Verification 必须判“不通过”：
 
 - 正文存在来源附录无法回溯的关键易变信息。
+- 正文易变数值与事实台账文件不一致（数值漂移），或正文出现台账中不存在的未核实信息。
 - 易变信息只有一处来源却标为 `✅`。
 - UGC 单源线索被写成确定事实。
 - 多来源冲突未记录或未在正文 / 附录体现处理方式。
