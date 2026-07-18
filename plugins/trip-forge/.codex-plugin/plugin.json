@@ -1,6 +1,6 @@
 {
   "name": "trip-forge",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Generate thoroughly researched, executable travel plans as self-contained HTML reports.",
   "author": {
     "name": "sen"
@@ -9,12 +9,13 @@
   "interface": {
     "displayName": "TripForge",
     "shortDescription": "Generate complete, mobile-friendly HTML travel plans.",
-    "longDescription": "Research current travel information and create a relaxed, weather-aware, executable itinerary as a complete self-contained HTML report.",
+    "longDescription": "Research current travel information and create a relaxed, weather-aware, executable itinerary as a complete self-contained HTML report. Every volatile fact (prices, schedules, opening hours, weather) is cross-verified against two sources, recorded in an on-disk fact ledger, and checked by a final verification gate before delivery. Hosts with subagent dispatch additionally get parallel multi-agent research and independent quality review.",
     "developerName": "sen",
     "category": "Productivity",
     "capabilities": [
       "Travel research",
       "Weather-aware itinerary planning",
+      "Cross-verified fact ledger with final verification gate",
       "Self-contained HTML reports"
     ],
     "defaultPrompt": [
