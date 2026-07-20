@@ -138,6 +138,11 @@ def validate_document(path: Path, expected_mode: str | None = None) -> list[str]
     except ValueError as error:
         return [str(error)]
 
+    for pattern in PLACEHOLDER_PATTERNS:
+        if pattern.search(frontmatter):
+            errors.append("Frontmatter 存在未替换占位符")
+            break
+
     for key in REQUIRED_FRONTMATTER:
         if not has_top_level_key(frontmatter, key):
             errors.append(f"缺少 Frontmatter 字段: {key}")

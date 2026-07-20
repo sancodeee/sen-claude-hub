@@ -76,6 +76,26 @@ class ValidateDesignDocumentTest(unittest.TestCase):
         self.assertTrue(any("占位符" in error for error in errors))
         self.assertTrue(any("代码块" in error for error in errors))
 
+    def test_frontmatter_placeholders_fail(self):
+        for placeholder in ("{{文档标题}}", "【文档标题】", "TODO"):
+            with self.subTest(placeholder=placeholder):
+                document = VALID_DOCUMENT.replace("title: 示例详细设计方案", f"title: {placeholder}")
+                errors = self.validate_text(document)
+                self.assertTrue(any("Frontmatter" in error and "占位符" in error for error in errors))
+
+    def test_real_templates_fail_when_frontmatter_contains_placeholders(self):
+        assets = SKILL_ROOT / "assets"
+        for filename, mode in (
+            ("backend-design-template.md", "backend"),
+            ("fullstack-design-template.md", "fullstack"),
+        ):
+            with self.subTest(filename=filename):
+                with TemporaryDirectory() as temp_dir:
+                    path = Path(temp_dir) / filename
+                    path.write_text((assets / filename).read_text(encoding="utf-8"), encoding="utf-8")
+                    errors = validate_document(path, mode)
+                self.assertTrue(any("Frontmatter" in error and "占位符" in error for error in errors))
+
     def test_unrelated_body_link_fails(self):
         errors = self.validate_text(VALID_DOCUMENT + "\n参考 [[未登记资料]]。\n")
         self.assertTrue(any("未登记资料" in error for error in errors))
