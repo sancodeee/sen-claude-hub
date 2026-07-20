@@ -1,3 +1,5 @@
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
@@ -7,7 +9,7 @@ import unittest
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SKILL_ROOT / "scripts"))
 
-from validate_design_document import validate_document
+from validate_design_document import main, validate_document
 
 
 VALID_DOCUMENT = """---
@@ -81,6 +83,54 @@ class ValidateDesignDocumentTest(unittest.TestCase):
     def test_pending_section_fails(self):
         errors = self.validate_text(VALID_DOCUMENT + "\n## 待确认问题\n- 字段语义未知\n")
         self.assertTrue(any("待确认" in error for error in errors))
+
+    def test_flow_style_tags_and_related_pass(self):
+        document = VALID_DOCUMENT.replace(
+            "tags:\n  - sample\n  - backend\n  - interface-design\n  - detailed-design\n",
+            "tags: [sample, backend, interface-design, detailed-design]\n",
+        ).replace(
+            "related:\n  - \"[[示例需求]]\"\n",
+            "related: [\"[[示例需求]]\"]\n",
+        )
+        self.assertEqual([], self.validate_text(document))
+
+    def test_closed_fenced_code_is_ignored_by_prose_checks(self):
+        document = VALID_DOCUMENT + """
+   ````markdown
+{{value}}
+[[代码示例]]
+## 待确认问题
+````
+~~~text
+{{another_value}}
+[[另一个代码示例]]
+~~~
+"""
+        self.assertEqual([], self.validate_text(document))
+
+    def test_cli_exit_codes_are_automated(self):
+        with TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "design.md"
+            path.write_text(VALID_DOCUMENT, encoding="utf-8")
+            stdout, stderr = StringIO(), StringIO()
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                self.assertEqual(0, main([str(path), "--mode", "backend"]))
+            self.assertIn("OK:", stdout.getvalue())
+
+            path.write_text(VALID_DOCUMENT + "\n## 待确认问题\n", encoding="utf-8")
+            stdout, stderr = StringIO(), StringIO()
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                self.assertEqual(1, main([str(path)]))
+            self.assertIn("待确认", stderr.getvalue())
+
+            stdout, stderr = StringIO(), StringIO()
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                self.assertEqual(2, main([str(Path(temp_dir) / "missing.md")]))
+            self.assertIn("无法读取文档", stderr.getvalue())
+
+            with redirect_stderr(StringIO()), self.assertRaises(SystemExit) as context:
+                main([str(path), "--mode", "invalid"])
+            self.assertEqual(2, context.exception.code)
 
 
 if __name__ == "__main__":
