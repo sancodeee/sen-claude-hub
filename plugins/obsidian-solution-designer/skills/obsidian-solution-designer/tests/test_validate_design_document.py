@@ -1,0 +1,87 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import sys
+import unittest
+
+
+SKILL_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SKILL_ROOT / "scripts"))
+
+from validate_design_document import validate_document
+
+
+VALID_DOCUMENT = """---
+title: 示例详细设计方案
+aliases:
+  - 示例设计
+tags:
+  - sample
+  - backend
+  - interface-design
+  - detailed-design
+status: ready
+version: v1.0
+created: 2026-07-20
+updated: 2026-07-20
+last_verified: 2026-07-20
+design_mode: backend
+maturity: ready-for-implementation-design
+related:
+  - "[[示例需求]]"
+source:
+  repositories:
+    - name: sample-backend
+---
+
+# 示例详细设计方案
+
+> [!summary] 文档定位
+> 作为实现设计基线。
+
+## 设计目标与范围
+## 设计依据与关联文档
+参考 [[示例需求]]。
+## 总体架构
+## 全流程交互设计
+## 接口契约
+## 数据模型与数据库设计
+## 异常与恢复
+## 验收与实现设计就绪检查
+"""
+
+
+class ValidateDesignDocumentTest(unittest.TestCase):
+    def validate_text(self, text: str, mode: str = "backend") -> list[str]:
+        with TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "design.md"
+            path.write_text(text, encoding="utf-8")
+            return validate_document(path, mode)
+
+    def test_valid_backend_document_passes(self):
+        self.assertEqual([], self.validate_text(VALID_DOCUMENT))
+
+    def test_missing_frontmatter_field_fails(self):
+        errors = self.validate_text(VALID_DOCUMENT.replace("version: v1.0\n", ""))
+        self.assertTrue(any("version" in error for error in errors))
+
+    def test_mode_mismatch_fails(self):
+        errors = self.validate_text(VALID_DOCUMENT, "fullstack")
+        self.assertTrue(any("design_mode" in error for error in errors))
+
+    def test_placeholder_and_unclosed_fence_fail(self):
+        text = VALID_DOCUMENT + "\n## 补充\n{{value}}\n```mermaid\nflowchart LR\n"
+        errors = self.validate_text(text)
+        self.assertTrue(any("占位符" in error for error in errors))
+        self.assertTrue(any("代码块" in error for error in errors))
+
+    def test_unrelated_body_link_fails(self):
+        errors = self.validate_text(VALID_DOCUMENT + "\n参考 [[未登记资料]]。\n")
+        self.assertTrue(any("未登记资料" in error for error in errors))
+
+    def test_pending_section_fails(self):
+        errors = self.validate_text(VALID_DOCUMENT + "\n## 待确认问题\n- 字段语义未知\n")
+        self.assertTrue(any("待确认" in error for error in errors))
+
+
+if __name__ == "__main__":
+    unittest.main()
