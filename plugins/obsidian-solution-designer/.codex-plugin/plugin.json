@@ -1,0 +1,27 @@
+{
+  "name": "obsidian-solution-designer",
+  "version": "1.0.0",
+  "description": "Create implementation-ready backend or full-stack detailed designs from verified requirements and system facts, formatted for Obsidian knowledge bases.",
+  "author": {
+    "name": "sen"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "需求驱动详细方案设计",
+    "shortDescription": "基于需求与系统事实生成符合 Obsidian 规范的详细设计方案。",
+    "longDescription": "Research requirements, repositories, databases, middleware, and referenced documents before producing a field-precise, interaction-closed backend or full-stack detailed design. Missing critical facts stop document generation instead of producing low-value drafts.",
+    "developerName": "sen",
+    "category": "Productivity",
+    "capabilities": [
+      "Requirements-driven detailed design",
+      "Backend and full-stack interaction closure",
+      "Field-level API and database contracts",
+      "Obsidian-compliant knowledge-base documents"
+    ],
+    "defaultPrompt": [
+      "Create a detailed backend design from my requirements and repository facts.",
+      "Create a full-stack detailed design with closed frontend and backend interactions.",
+      "Update my existing Obsidian design after re-verifying its sources."
+    ]
+  }
+}
