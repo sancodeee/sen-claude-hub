@@ -1,9 +1,20 @@
 ---
 name: obsidian-solution-designer
 description: Use when 用户要求依据需求、现有代码、数据库、中间件或参考资料，新建或更新符合 Obsidian 知识库规范的后端或全栈详细设计方案。
+user-invocable: true
+allowed-tools: Read, Grep, Glob, Bash
 ---
 
 # Obsidian Solution Designer
+
+## 插件根目录初始化
+
+下列脚本命令中的 `${PLUGIN_ROOT}` 表示插件根目录。执行机械校验脚本前必须先完成初始化：
+
+- Claude Code：执行 `PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:?CLAUDE_PLUGIN_ROOT is not set}"`。
+- Codex：从已加载技能的绝对路径中取得当前 `SKILL.md` 所在目录，再向上两级得到插件根目录，并将该绝对路径赋给 `PLUGIN_ROOT`。不要在 Codex 中执行 Claude Code 的赋值命令。
+
+脚本命令统一使用 `${PLUGIN_ROOT:?PLUGIN_ROOT must be set}`，未正确初始化时立即停止，禁止以空路径继续执行。
 
 ## 核心目标
 
@@ -29,7 +40,7 @@ description: Use when 用户要求依据需求、现有代码、数据库、中�
 6. **在临时文件组装正式设计。** 用冻结事实编写目标、范围、依据、现状与目标差异、架构、全流程、状态、接口、数据、中间件、权限安全、一致性、异常恢复、验收和实现设计就绪检查。按实际长链路使用 Mermaid，保持图、表、字段与正文一致。
 7. **读取计划内的 `references/diagrams-and-closure.md` 完成语义审查。** 验证需求、正常及异常链路、调用方与结果消费方、状态、字段、数据变化、重试、并发和恢复闭环；发现需要用户裁决的问题，丢弃临时正式设计并返回第 3 步。
 8. **读取 [obsidian-document-rules.md](references/obsidian-document-rules.md) 完成格式和落盘定位。** 核验 YAML、真实 tags/related/database/source、正文双链、关联用途表、callout、版本和更新迁移规则。
-9. **运行机械校验。** 对临时正式文档运行 `python3 plugins/obsidian-solution-designer/skills/obsidian-solution-designer/scripts/validate_design_document.py <临时文档> --mode <backend|fullstack>`。修复可由已冻结事实确定的问题后重跑；若失败暴露事实缺失，回到第 3 步。
+9. **运行机械校验。** 先按“插件根目录初始化”设置 `PLUGIN_ROOT`，再对临时正式文档运行 `python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/obsidian-solution-designer/scripts/validate_design_document.py" <临时文档> --mode <backend|fullstack>`。修复可由已冻结事实确定的问题后重跑；若失败暴露事实缺失，回到第 3 步。
 10. **校验通过后一次性新建或更新目标文档。** 更新时修改已确认原文件，不创建重复版本；记录实际核验来源和本次变更。向用户报告交付路径、模式、已核验基线及校验结果。
 
 ## 参考文件路由
