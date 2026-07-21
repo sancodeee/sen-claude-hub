@@ -95,6 +95,17 @@ class ValidateDesignDocumentTest(unittest.TestCase):
                     path.write_text((assets / filename).read_text(encoding="utf-8"), encoding="utf-8")
                     errors = validate_document(path, mode)
                 self.assertTrue(any("Frontmatter" in error and "占位符" in error for error in errors))
+                # 模板骨架自身的表格结构必须始终合法，防止坏表格被复制进正式设计。
+                self.assertFalse(any("表格分隔行" in error for error in errors))
+
+    def test_table_separator_column_mismatch_fails(self):
+        text = VALID_DOCUMENT + "\n| 字段名 | 类型 | 业务语义 |\n| --- | --- |\n"
+        errors = self.validate_text(text)
+        self.assertTrue(any("表格分隔行与表头列数不一致" in error for error in errors))
+
+    def test_consistent_table_passes(self):
+        text = VALID_DOCUMENT + "\n| 字段名 | 类型 | 业务语义 |\n| --- | --- | --- |\n| id | long | 主键 |\n"
+        self.assertEqual([], self.validate_text(text))
 
     def test_unrelated_body_link_fails(self):
         errors = self.validate_text(VALID_DOCUMENT + "\n参考 [[未登记资料]]。\n")

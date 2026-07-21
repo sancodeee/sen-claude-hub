@@ -91,6 +91,34 @@ def flow_sequence_values(value: str) -> list[str]:
     return [item for item in values if item]
 
 
+TABLE_SEPARATOR_PATTERN = re.compile(r"^\|(?:\s*:?-{3,}:?\s*\|)+\s*$")
+UNESCAPED_PIPE_PATTERN = re.compile(r"(?<!\\)\|")
+
+
+def table_column_count(row: str) -> int:
+    return len(UNESCAPED_PIPE_PATTERN.findall(row.strip())) - 1
+
+
+def validate_tables(prose: str) -> list[str]:
+    """校验表格分隔行与表头列数一致；不一致时 Obsidian 不会渲染为表格。"""
+    errors: list[str] = []
+    lines = prose.splitlines()
+    for index in range(1, len(lines)):
+        line = lines[index].strip()
+        if not TABLE_SEPARATOR_PATTERN.match(line):
+            continue
+        header = lines[index - 1].strip()
+        if not header.startswith("|"):
+            continue
+        header_columns = table_column_count(header)
+        separator_columns = table_column_count(line)
+        if header_columns > 0 and header_columns != separator_columns:
+            errors.append(
+                f"表格分隔行与表头列数不一致（表头 {header_columns} 列 / 分隔行 {separator_columns} 列）: {header[:40]}"
+            )
+    return errors
+
+
 FENCE_OPEN_PATTERN = re.compile(r"^( {0,3})(`{3,}|~{3,}).*$", re.MULTILINE)
 
 
@@ -170,6 +198,7 @@ def validate_document(path: Path, expected_mode: str | None = None) -> list[str]
             break
     if not validate_fences(body):
         errors.append("Markdown 代码块未闭合")
+    errors.extend(validate_tables(prose))
 
     headings = "\n".join(re.findall(r"(?m)^#{1,6}\s+(.+)$", prose))
     for group in REQUIRED_SECTION_GROUPS:
