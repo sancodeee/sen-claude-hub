@@ -54,6 +54,7 @@ Install plugins one by one using `/plugin install <name>@sen-claude-hub`:
 /plugin install jenkins-cli@sen-claude-hub
 /plugin install git-worktree-helper@sen-claude-hub
 /plugin install trip-forge@sen-claude-hub
+/plugin install obsidian-solution-designer@sen-claude-hub
 ```
 
 > You can also run `/plugin` to open the interactive panel and browse/select plugins to install.
@@ -70,6 +71,12 @@ Install plugins one by one using `/plugin install <name>@sen-claude-hub`:
 
   ```text
   /trip-forge:invoke Yantai 3 days, two people, departing from Beijing
+  ```
+
+- Invoke the detailed-design command:
+
+  ```text
+  /obsidian-solution-designer:design Create a backend detailed design for order cancellation using the current repository and target Obsidian knowledge base as sources.
   ```
 
 ### Manage the marketplace and plugins
@@ -106,6 +113,7 @@ After installation, trigger a plugin with natural language in a Codex session, f
 
 - Generate a travel plan: `Create a complete HTML travel plan for my next trip.`
 - Run an end-to-end test: `Run an end-to-end test for this web application.`
+- Create a full-stack detailed design: `Create a full-stack detailed design from these requirements and repository facts.`
 
 See the "Codex example prompt" column below for more per-plugin examples.
 
@@ -123,6 +131,7 @@ See the "Codex example prompt" column below for more per-plugin examples.
 | `jenkins-cli` | `/jenkins-cli:invoke` | `List the Jenkins jobs available to me.` | Jenkins CLI usage and diagnostics |
 | `git-worktree-helper` | `/git-worktree-helper:create`, `/git-worktree-helper:cleanup` | `Create a worktree for this task.` | Create / clean up Git worktrees |
 | `trip-forge` | `/trip-forge:invoke` | `Create a complete HTML travel plan for my next trip.` | Generate HTML travel plan reports |
+| `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | Produces an implementation-ready backend or full-stack detailed design when information is sufficient; otherwise asks only blocking questions and creates no partial document |
 
 ---
 

@@ -54,6 +54,7 @@
 /plugin install jenkins-cli@sen-claude-hub
 /plugin install git-worktree-helper@sen-claude-hub
 /plugin install trip-forge@sen-claude-hub
+/plugin install obsidian-solution-designer@sen-claude-hub
 ```
 
 > 也可以直接运行 `/plugin` 打开交互式面板，在其中浏览并勾选要安装的插件。
@@ -70,6 +71,12 @@
 
   ```text
   /trip-forge:invoke 烟台 3天 两人 从北京出发
+  ```
+
+- 调用详细方案设计命令：
+
+  ```text
+  /obsidian-solution-designer:design 为订单取消能力编写后端详细设计；资料位于当前仓库和目标 Obsidian 知识库。
   ```
 
 ### 管理市场与插件
@@ -106,6 +113,7 @@ cd sen-claude-hub
 
 - 生成旅行攻略：`Create a complete HTML travel plan for my next trip.`
 - 运行端到端测试：`Run an end-to-end test for this web application.`
+- 生成全栈详细设计：`Create a full-stack detailed design from these requirements and repository facts.`
 
 更多逐插件示例见下表的「Codex 示例 prompt」列。
 
@@ -123,6 +131,7 @@ cd sen-claude-hub
 | `jenkins-cli` | `/jenkins-cli:invoke` | `List the Jenkins jobs available to me.` | Jenkins CLI 使用与诊断 |
 | `git-worktree-helper` | `/git-worktree-helper:create`、`/git-worktree-helper:cleanup` | `Create a worktree for this task.` | 创建 / 清理 Git worktree |
 | `trip-forge` | `/trip-forge:invoke` | `Create a complete HTML travel plan for my next trip.` | 生成 HTML 旅行攻略报告 |
+| `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | 资料充分时生成成熟的后端或全栈详细设计；关键信息不足时只询问阻塞问题，不创建半成品文档 |
 
 ---
 
