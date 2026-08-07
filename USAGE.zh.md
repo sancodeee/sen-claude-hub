@@ -46,7 +46,6 @@
 逐个安装，格式为 `/plugin install <插件名>@sen-claude-hub`：
 
 ```text
-/plugin install mcp-faster-caller@sen-claude-hub
 /plugin install global-java-code-style@sen-claude-hub
 /plugin install fintorq-code-style@sen-claude-hub
 /plugin install agent-browser-integration-testing@sen-claude-hub
@@ -123,7 +122,6 @@ cd sen-claude-hub
 
 | 插件 | Claude Code 命令 | Codex 示例 prompt | 典型用途 |
 |------|------------------|-------------------|----------|
-| `mcp-faster-caller` | `/mcp-faster-caller:invoke` | `Use the GitHub MCP tools for this request.` | 将简洁别名路由到 MCP 工具 |
 | `global-java-code-style` | `/global-java-code-style:invoke` | `Review this Java code for style and quality issues.` | 通用 Java 编码规范 |
 | `fintorq-code-style` | `/fintorq-code-style:invoke` | `Review this code against Fintorq standards.` | Fintorq 项目代码规范 |
 | `agent-browser-integration-testing` | `/agent-browser-integration-testing:invoke` | `Run an end-to-end test for this web application.` | 浏览器自动化与 E2E 测试 |

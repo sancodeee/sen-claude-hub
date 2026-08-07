@@ -46,7 +46,6 @@ Once added, inspect the plugins in the marketplace:
 Install plugins one by one using `/plugin install <name>@sen-claude-hub`:
 
 ```text
-/plugin install mcp-faster-caller@sen-claude-hub
 /plugin install global-java-code-style@sen-claude-hub
 /plugin install fintorq-code-style@sen-claude-hub
 /plugin install agent-browser-integration-testing@sen-claude-hub
@@ -123,7 +122,6 @@ See the "Codex example prompt" column below for more per-plugin examples.
 
 | Plugin | Claude Code command | Codex example prompt | Typical use |
 |--------|---------------------|----------------------|-------------|
-| `mcp-faster-caller` | `/mcp-faster-caller:invoke` | `Use the GitHub MCP tools for this request.` | Route concise aliases to MCP tools |
 | `global-java-code-style` | `/global-java-code-style:invoke` | `Review this Java code for style and quality issues.` | General Java coding standards |
 | `fintorq-code-style` | `/fintorq-code-style:invoke` | `Review this code against Fintorq standards.` | Fintorq project code standards |
 | `agent-browser-integration-testing` | `/agent-browser-integration-testing:invoke` | `Run an end-to-end test for this web application.` | Browser automation and E2E testing |

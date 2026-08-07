@@ -7,14 +7,13 @@
 ## ✨ 特性
 
 - **双平台支持**：同一仓库同时被 Claude Code 与 Codex 识别。
-- **开箱即用**：内置 9 个插件，覆盖代码规范、自动化测试、数据爬取、运维、旅行规划、详细方案设计等场景。
+- **开箱即用**：内置 8 个插件，覆盖代码规范、自动化测试、数据爬取、运维、旅行规划、详细方案设计等场景。
 - **命令 + 技能形态**：每个插件提供 slash 命令（`commands/`）与技能（`skills/`），可显式调用，也可由模型按需触发。
 
 ## 📦 插件清单
 
 | 插件 | 版本 | 分类 | 作用 |
 |------|------|------|------|
-| `mcp-faster-caller` | 1.0.0 | Productivity | 将简洁别名路由到 MCP 工具（GitHub / 数据库 / 浏览器 / 搜索 / 文档 / 图像 / PDF） |
 | `global-java-code-style` | 1.0.0 | Developer Tools | 通用 Java 编码、架构、异常处理、测试与安全规范 |
 | `fintorq-code-style` | 1.0.0 | Developer Tools | Fintorq 项目官方代码风格与开发规范 |
 | `agent-browser-integration-testing` | 1.0.0 | Productivity | 基于 agent-browser CLI 的浏览器自动化与端到端集成测试 |

@@ -40,7 +40,6 @@ Scripts are then invoked as `"${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/<na
 
 ## Plugins in this repo
 
-- **mcp-faster-caller** — compresses verbose MCP calls into short aliases (`gh`, `db`, `browser`, `search`, …) via `scripts/call_mcp.py`.
 - **global-java-code-style** / **fintorq-code-style** — reference-only skills (no scripts) providing Java coding standards; `fintorq-code-style` is project-specific and marked MUST-follow.
 - **agent-browser-integration-testing** — browser E2E testing driven by the external `agent-browser` CLI; includes `scripts/validate-report.js` and report templates.
 - **byd-vehicle-scrape** — Node + Playwright scraper that produces JSON then SQL.
