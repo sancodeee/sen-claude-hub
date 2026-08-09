@@ -1,5 +1,4 @@
 ---
-name: resume-forge:write
 description: 调用 ResumeForge 简历工坊撰写真实、定制化的中文简历内容。
 argument-hint: "[真实经历材料、目标职位 JD、现有简历或修改要求]"
 ---
