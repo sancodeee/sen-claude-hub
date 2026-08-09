@@ -1,0 +1,4 @@
+interface:
+  display_name: "ResumeForge 简历工坊"
+  short_description: "真实材料驱动的中文简历内容写作、JD 定制与事实核验"
+  default_prompt: "Use $resume-forge to write a truthful, job-targeted Chinese resume from my materials."

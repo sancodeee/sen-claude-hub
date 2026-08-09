@@ -1,0 +1,8 @@
+{
+  "name": "resume-forge",
+  "version": "1.0.0",
+  "description": "基于真实材料撰写并按职位描述定制的中文简历内容。",
+  "author": {
+    "name": "sen"
+  }
+}
