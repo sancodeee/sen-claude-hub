@@ -1,19 +1,19 @@
 {
   "name": "resume-forge",
   "version": "1.0.0",
-  "description": "Write truthful, job-targeted Chinese resume content from user-provided materials.",
+  "description": "Write truthful, job-targeted Chinese Markdown resume content from user-provided materials.",
   "author": {
     "name": "sen"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "ResumeForge 简历工坊",
-    "shortDescription": "Write truthful Chinese resumes tailored to job descriptions.",
-    "longDescription": "Create truthful Chinese resume content from real user materials, tailor it to a job description, organize it in a fixed structure, and check factual consistency.",
+    "shortDescription": "Write truthful Chinese Markdown resumes tailored to job descriptions.",
+    "longDescription": "Create truthful Chinese Markdown resume content from real user materials, tailor it to a job description, organize it in a fixed structure, and check factual consistency.",
     "developerName": "sen",
     "category": "Productivity",
     "capabilities": [
-      "Truthful Chinese resume writing from real materials",
+      "Truthful Chinese Markdown resume writing from real materials",
       "Job-description tailoring",
       "Fixed resume structure",
       "Factual consistency checks"
