@@ -79,8 +79,8 @@
 
 ### 3.3 命令与 Skill
 
-- 命令文件使用现有的 `commands/<plugin-name>-invoke.md` 约定。
-- 命令名称为 `resume-forge:write`，只负责要求宿主立即调用 Skill 并传递 `$ARGUMENTS`。
+- Claude Code 命令由插件命名空间下 `commands/<action>.md` 的文件名映射；ResumeForge 的 `commands/write.md` 对应 `/resume-forge:write`。
+- 命令不得依赖 command frontmatter 的 `name` 重命名；`write.md` 只负责要求宿主立即调用 Skill 并传递 `$ARGUMENTS`。
 - 业务流程、模板规则和事实约束只写在 Skill 或其参考文件中，不复制到命令文件。
 - `agents/openai.yaml` 从 Skill 的真实能力生成，不包含尚未实现的能力。
 
@@ -99,7 +99,7 @@ plugins/resume-forge/
 ├── .codex-plugin/
 │   └── plugin.json
 ├── commands/
-│   └── resume-forge-invoke.md
+│   └── write.md
 └── skills/
     └── resume-forge/
         ├── SKILL.md

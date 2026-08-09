@@ -93,7 +93,7 @@ plugins/resume-forge/
 ├── .codex-plugin/
 │   └── plugin.json
 ├── commands/
-│   └── resume-forge-invoke.md
+│   └── write.md
 └── skills/
     └── resume-forge/
         ├── SKILL.md
@@ -105,6 +105,8 @@ plugins/resume-forge/
             ├── resume-data-contract.md
             └── resume-quality-checklist.md
 ```
+
+Claude Code 按插件命名空间将 `commands/<action>.md` 映射为 `/resume-forge:<action>`；因此必须使用 `commands/write.md` 形成 `/resume-forge:write`，不得依赖 command frontmatter 的 `name` 重命名。
 
 阶段一不创建空的 `scripts/`、`assets/` 或 `tests/` 目录，也不在清单中宣称 HTML、PDF 或照片处理已经可用。
 
