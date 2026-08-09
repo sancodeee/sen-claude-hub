@@ -111,6 +111,12 @@ cd sen-claude-hub
 
 The Codex marketplace manifest lives at `.agents/plugins/marketplace.json`. In Codex, add this repository directory as a **local marketplace**, then install the plugins you need from it. The installable plugin names match the [per-plugin reference](#d-per-plugin-reference) below.
 
+This repository uses a non-default marketplace path, so explicitly add the local repository first:
+
+```text
+codex plugin marketplace add /absolute/path/to/sen-claude-hub
+```
+
 Install ResumeForge:
 
 ```text

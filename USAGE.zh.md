@@ -111,6 +111,12 @@ cd sen-claude-hub
 
 仓库的 Codex 市场清单位于 `.agents/plugins/marketplace.json`。在 Codex 中以**本地市场**的方式添加该仓库目录，然后从市场中选择安装所需插件。可安装的插件名与下方[逐插件速查表](#d-逐插件速查表)一致。
 
+此仓库使用非默认 marketplace 路径，请先显式添加本地仓库：
+
+```text
+codex plugin marketplace add /absolute/path/to/sen-claude-hub
+```
+
 安装 ResumeForge：
 
 ```text
