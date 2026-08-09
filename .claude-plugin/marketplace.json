@@ -55,6 +55,12 @@
       "description": "基于用户需求与现有系统事实，生成符合 Obsidian 知识库规范的后端或全栈详细设计方案。",
       "source": "./plugins/obsidian-solution-designer",
       "version": "1.0.0"
+    },
+    {
+      "name": "resume-forge",
+      "description": "基于真实材料撰写中文 Markdown 简历，并可按 JD 定制。",
+      "source": "./plugins/resume-forge",
+      "version": "1.0.0"
     }
   ]
 }
