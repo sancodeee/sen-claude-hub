@@ -36,10 +36,10 @@ allowed-tools: Read, Grep, Glob, Bash
 2. **读取并执行 [research-and-evidence.md](references/research-and-evidence.md)。** 依序调研指定资料、真实仓库结构与相关调用链、数据库及中间件配置、任意目录中的参考资料和少量同主题笔记；形成精简关键事实清单。
 3. **遇到阻塞时只询问问题，不创建文档。** 合并重复项，只返回会改变设计结果的缺失或冲突问题。用户不能补充时，要求缩小范围或终止；不要以占位符、假设、草稿或待确认章节继续。
 4. **冻结事实和命名。** 确认范围及不做事项、当前基线、目标需求、冲突裁决、业务规则、接口方向、状态和统一术语均无未决项。
-5. **读取公共契约及对应模式规范。** 必读 [design-quality-contract.md](references/design-quality-contract.md) 与 [api-and-data-contract.md](references/api-and-data-contract.md)。后端模式读取计划内的 `references/backend-detailed-design.md`；全栈模式读取计划内的 `references/fullstack-detailed-design.md`。按选定模式使用计划内对应模板。
-6. **在临时文件组装正式设计。** 用冻结事实编写目标、范围、依据、现状与目标差异、架构、全流程、状态、接口、数据、中间件、权限安全、一致性、异常恢复、验收和实现设计就绪检查。按实际长链路使用 Mermaid，保持图、表、字段与正文一致。
-7. **读取计划内的 `references/diagrams-and-closure.md` 完成语义审查。** 验证需求、正常及异常链路、调用方与结果消费方、状态、字段、数据变化、重试、并发和恢复闭环；发现需要用户裁决的问题，丢弃临时正式设计并返回第 3 步。
-8. **读取 [obsidian-document-rules.md](references/obsidian-document-rules.md) 完成格式和落盘定位。** 核验 YAML、真实 tags/related/database/source、正文双链、关联用途表、callout、版本和更新迁移规则。
+5. **读取公共契约及对应模式规范。** 必读 [design-quality-contract.md](references/design-quality-contract.md) 与 [api-and-data-contract.md](references/api-and-data-contract.md)。后端模式读取 [backend-detailed-design.md](references/backend-detailed-design.md) 并使用 [backend-design-template.md](assets/backend-design-template.md)；全栈模式读取 [fullstack-detailed-design.md](references/fullstack-detailed-design.md) 并使用 [fullstack-design-template.md](assets/fullstack-design-template.md)。更新旧版文档时先按 [obsidian-document-rules.md](references/obsidian-document-rules.md) 建立迁移映射，禁止直接用新模板覆盖原文。
+6. **在临时文件组装正式设计。** 采用“核心正文 + 条件内容块 + 契约附录”：正文依次呈现设计概览、架构职责、关键链路、保障策略和验收结论，全栈模式增加前端设计；字段级接口、数据和映射集中到契约附录。流程、接口、数据、错误和验收等可复用设计定义只在一个位置完整说明，其他章节通过 `FLOW/API/DATA/ERR/AC` 编号引用，禁止重复改写同一流程、状态、错误或数据变化。没有真实接口或数据模型依赖时，不创建对应编号和空表，在契约附录各保留一句已核验的不适用结论。
+7. **读取 [diagrams-and-closure.md](references/diagrams-and-closure.md) 完成语义审查。** 每份文档维护一张闭环导航表，每行必须引用 `FLOW` 和 `AC`，并按实际涉及引用 `API`、`DATA`、`ERR`。只按实际复杂度选择 Mermaid 图，不把架构图、时序图、流程图、状态图和 ER 图全部作为固定输出；发现需要用户裁决的问题，丢弃临时正式设计并返回第 3 步。
+8. **读取 [obsidian-document-rules.md](references/obsidian-document-rules.md) 完成格式和落盘定位。** 核验 YAML、与 `title` 一致的唯一正文 H1、真实 tags/related/database/source、正文双链、关联用途表、callout、版本和更新迁移规则；删除模板作者说明。更新时逐项确认原有效结论、来源、双链和必要图均已保留或有明确迁移去向，再允许删除旧结构中的重复内容。
 9. **运行机械校验。** 先按“插件根目录初始化”设置 `PLUGIN_ROOT`，再对临时正式文档运行 `python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/obsidian-solution-designer/scripts/validate_design_document.py" <临时文档> --mode <backend|fullstack>`。修复可由已冻结事实确定的问题后重跑；若失败暴露事实缺失，回到第 3 步。
 10. **校验通过后一次性新建或更新目标文档。** 更新时修改已确认原文件，不创建重复版本；记录实际核验来源和本次变更。向用户报告交付路径、模式、已核验基线及校验结果。
 
@@ -49,9 +49,11 @@ allowed-tools: Read, Grep, Glob, Bash
 - [design-quality-contract.md](references/design-quality-contract.md)：命名、成熟度和实现设计就绪。
 - [api-and-data-contract.md](references/api-and-data-contract.md)：接口、错误、数据库和字段映射精度。
 - [obsidian-document-rules.md](references/obsidian-document-rules.md)：知识库定位、YAML、双链、标签和更新规则。
-- `references/backend-detailed-design.md`：后端模式维度（计划内文件）。
-- `references/fullstack-detailed-design.md`：全栈模式维度（计划内文件）。
-- `references/diagrams-and-closure.md`：图表选择与闭环审查（计划内文件）。
+- [backend-detailed-design.md](references/backend-detailed-design.md)：后端模式维度。
+- [fullstack-detailed-design.md](references/fullstack-detailed-design.md)：全栈模式维度。
+- [diagrams-and-closure.md](references/diagrams-and-closure.md)：图表选择、闭环编号与一致性审查。
+- [backend-design-template.md](assets/backend-design-template.md)：后端正式文档骨架。
+- [fullstack-design-template.md](assets/fullstack-design-template.md)：全栈正式文档骨架。
 
 ## 停止条件
 
@@ -68,4 +70,8 @@ allowed-tools: Read, Grep, Glob, Bash
 - 将 PRD 或代码单方当作冲突的裁决依据。
 - 将目录名当作资料是否存在的判断，或只搜索 `docs/`。
 - 用 JSON 示例替代字段表，或用图替代异常、数据和状态说明。
+- 为每个审查维度单独建立顶层章节，导致流程、错误、状态和验收在多处重复。
+- 在简单场景中机械保留全部 Mermaid 图、空章节或通用页面状态机。
+- 在正式文档中保留“模板骨架”“落盘门禁”等作者说明。
+- 引用未定义、重复定义、内容为空或未以标题定义的 `FLOW/API/DATA/ERR/AC` 编号。
 - 将代码路径伪装为 Obsidian 双链，或将正文未使用的笔记填入 `related`。
