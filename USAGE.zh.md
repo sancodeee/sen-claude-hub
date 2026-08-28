@@ -149,7 +149,7 @@ codex plugin add resume-forge@sen-claude-hub
 | `jenkins-cli` | `/jenkins-cli:invoke` | `List the Jenkins jobs available to me.` | Jenkins CLI 使用与诊断 |
 | `git-worktree-helper` | `/git-worktree-helper:create`、`/git-worktree-helper:cleanup` | `Create a worktree for this task.` | 创建 / 清理 Git worktree |
 | `trip-forge` | `/trip-forge:invoke` | `Create a complete HTML travel plan for my next trip.` | 生成 HTML 旅行攻略报告 |
-| `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | 资料充分时生成成熟的后端或全栈详细设计；关键信息不足时只询问阻塞问题，不创建半成品文档 |
+| `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | 仅用于待实现需求的后端或全栈实现级详细设计；普通 Obsidian 总结、复盘、纪要、调研和知识笔记不触发 |
 | `resume-forge` | `/resume-forge:write` | `$resume-forge 基于以下真实材料撰写中文 Markdown 简历，可选按目标 JD 定制：...` | 基于真实材料撰写中文 Markdown 简历，并可选按 JD 定制 |
 
 ---

@@ -1,4 +1,4 @@
 interface:
   display_name: "需求驱动详细方案设计"
-  short_description: "基于需求与系统事实生成符合 Obsidian 规范的详细设计方案"
-  default_prompt: "Use $obsidian-solution-designer to create an implementation-ready detailed design from my requirements and system facts."
+  short_description: "为待实现的软件需求生成可指导开发的后端或全栈详细设计"
+  default_prompt: "Use $obsidian-solution-designer to create an implementation-ready backend or full-stack detailed design for this pending software requirement from verified system facts."

@@ -52,9 +52,9 @@
     },
     {
       "name": "obsidian-solution-designer",
-      "description": "基于用户需求与现有系统事实，生成符合 Obsidian 知识库规范的后端或全栈详细设计方案。",
+      "description": "为待实现的软件需求生成基于系统事实、可指导开发的后端或全栈详细设计；不用于普通 Obsidian 文档。",
       "source": "./plugins/obsidian-solution-designer",
-      "version": "1.1.0"
+      "version": "1.1.1"
     },
     {
       "name": "resume-forge",

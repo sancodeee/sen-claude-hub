@@ -1,27 +1,27 @@
 {
   "name": "obsidian-solution-designer",
-  "version": "1.1.0",
-  "description": "Create implementation-ready backend or full-stack detailed designs from verified requirements and system facts, formatted for Obsidian knowledge bases.",
+  "version": "1.1.1",
+  "description": "Use for implementation-ready backend or full-stack detailed designs for concrete software requirements, grounded in verified system facts; not for general Obsidian notes, summaries, retrospectives, meeting minutes, or research documents.",
   "author": {
     "name": "sen"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "需求驱动详细方案设计",
-    "shortDescription": "基于需求与系统事实生成符合 Obsidian 规范的详细设计方案。",
-    "longDescription": "Research requirements, repositories, databases, middleware, and referenced documents before producing a field-precise, interaction-closed backend or full-stack detailed design. Missing critical facts stop document generation instead of producing low-value drafts.",
+    "shortDescription": "为待实现的软件需求生成可指导开发的后端或全栈详细设计。",
+    "longDescription": "Use for concrete software requirements that need an implementation-ready backend or full-stack design grounded in repositories, databases, middleware, and source documents. Obsidian is only the delivery format; general notes, summaries, retrospectives, meeting minutes, research reports, and documentation formatting are out of scope. Missing critical facts stop document generation instead of producing low-value drafts.",
     "developerName": "sen",
     "category": "Productivity",
     "capabilities": [
       "Requirements-driven detailed design",
       "Backend and full-stack interaction closure",
       "Field-level API and database contracts",
-      "Obsidian-compliant knowledge-base documents"
+      "Implementation-design documents formatted for Obsidian"
     ],
     "defaultPrompt": [
-      "Create a detailed backend design from my requirements and repository facts.",
-      "Create a full-stack detailed design with closed frontend and backend interactions.",
-      "Update my existing Obsidian design after re-verifying its sources."
+      "Create an implementation-ready backend detailed design for this pending software requirement using the provided repository facts.",
+      "Create an implementation-ready full-stack design for this pending feature with closed frontend and backend interactions.",
+      "Update the existing backend or full-stack detailed design for this software change after re-verifying its implementation sources."
     ]
   }
 }

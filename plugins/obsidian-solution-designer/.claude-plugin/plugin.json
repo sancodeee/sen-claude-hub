@@ -1,7 +1,7 @@
 {
   "name": "obsidian-solution-designer",
-  "version": "1.1.0",
-  "description": "基于用户需求与现有系统事实，生成符合 Obsidian 知识库规范的后端或全栈详细设计方案。",
+  "version": "1.1.1",
+  "description": "面向待实现的软件需求，基于需求与现有系统事实编写可指导开发的后端或全栈实现级详细设计；不用于普通 Obsidian 总结、复盘、纪要、调研或知识笔记。",
   "author": {
     "name": "sen"
   }

@@ -149,7 +149,7 @@ See the "Codex example prompt" column below for more per-plugin examples.
 | `jenkins-cli` | `/jenkins-cli:invoke` | `List the Jenkins jobs available to me.` | Jenkins CLI usage and diagnostics |
 | `git-worktree-helper` | `/git-worktree-helper:create`, `/git-worktree-helper:cleanup` | `Create a worktree for this task.` | Create / clean up Git worktrees |
 | `trip-forge` | `/trip-forge:invoke` | `Create a complete HTML travel plan for my next trip.` | Generate HTML travel plan reports |
-| `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | Produces an implementation-ready backend or full-stack detailed design when information is sufficient; otherwise asks only blocking questions and creates no partial document |
+| `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | Only for implementation-ready backend or full-stack designs for concrete software requirements; general Obsidian summaries, retrospectives, meeting minutes, research reports, and notes do not trigger it |
 | `resume-forge` | `/resume-forge:write` | `$resume-forge Write a Chinese Markdown resume from these real materials, optionally tailored to this JD: ...` | Write a Chinese Markdown resume from real materials, optionally tailored to a JD |
 
 ---

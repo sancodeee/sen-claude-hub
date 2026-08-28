@@ -1,0 +1,86 @@
+[
+  {
+    "query": "根据退款需求 PRD、当前后端仓库和数据库表结构，写一份可直接进入开发的后端详细设计，并保存到工作 Obsidian 知识库。",
+    "should_trigger": true
+  },
+  {
+    "query": "订单取消功能下个迭代要开发。请先核对现有前后端代码，再把页面交互、接口字段、状态流转、表变化和异常恢复设计清楚。",
+    "should_trigger": true
+  },
+  {
+    "query": "更新知识库里现有的授信申请全栈详细设计；最近接口和数据库字段变了，请以当前代码为准重新核验并形成实现方案。",
+    "should_trigger": true
+  },
+  {
+    "query": "我们准备实现异步放款通知，请结合仓库、Kafka topic 和幂等表，为开发评审输出后端技术设计。",
+    "should_trigger": true
+  },
+  {
+    "query": "给新建客户功能做一份 implementation-ready full-stack design，前端页面态、API、服务端处理和数据落库都要闭环。",
+    "should_trigger": true
+  },
+  {
+    "query": "这个需求马上要进入编码，请调研 repo 和现有接口，整理出开发人员可以照着实现的前后端方案，最终放到 Obsidian。",
+    "should_trigger": true
+  },
+  {
+    "query": "基于现有代码和库表，为还款计划调整能力补齐详细设计，重点说明事务、一致性、失败恢复和验收条件。",
+    "should_trigger": true
+  },
+  {
+    "query": "原来的订单详情设计文档已经过时了。请核对本次需求变更和代码，把它更新成可实施的后端设计。",
+    "should_trigger": true
+  },
+  {
+    "query": "为下个迭代的额度冻结功能写一份技术实现说明文档，把 API 契约、状态变化、数据库更新、失败补偿和验收条件设计清楚，开发会按它编码。",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我把本周完成的工作整理成一篇总结性文档，写到 Obsidian 知识库，包含成果、问题和下周计划。",
+    "should_trigger": false
+  },
+  {
+    "query": "根据昨天的技术会议记录生成会议纪要，补充结论和行动项，然后存入 Obsidian。",
+    "should_trigger": false
+  },
+  {
+    "query": "把这次支付超时线上事故写成复盘文档放进知识库，重点总结时间线、根因、处置和经验。",
+    "should_trigger": false
+  },
+  {
+    "query": "阅读这些行业资料，写一份汽车金融市场调研报告，并按照我们的 Obsidian 格式落盘。",
+    "should_trigger": false
+  },
+  {
+    "query": "整理一篇 Kafka 消息可靠性学习笔记到 Obsidian，要求有 YAML、双链和参考来源。",
+    "should_trigger": false
+  },
+  {
+    "query": "根据仓库代码梳理一下当前系统架构，写成供新人阅读的说明文档，不涉及新需求或实现改造。",
+    "should_trigger": false
+  },
+  {
+    "query": "把现有接口清单整理成 API 使用手册，补充请求示例和常见错误，发布到 Obsidian。",
+    "should_trigger": false
+  },
+  {
+    "query": "根据用户访谈写一份产品需求总结和 PRD，放进工作知识库供产品评审。",
+    "should_trigger": false
+  },
+  {
+    "query": "把这次数据库升级过程整理成运维操作记录和回滚手册，写入 Obsidian。",
+    "should_trigger": false
+  },
+  {
+    "query": "审阅现有的全栈详细设计，指出内容是否冗长、是否存在矛盾；先不要改写文档。",
+    "should_trigger": false
+  },
+  {
+    "query": "只把这份普通 Markdown 笔记转换成符合 Obsidian 规范的 YAML、callout 和双链格式，不改变正文内容。",
+    "should_trigger": false
+  },
+  {
+    "query": "详细总结一下今天读到的 Spring Boot 事务文章，整理成个人知识笔记。",
+    "should_trigger": false
+  }
+]
