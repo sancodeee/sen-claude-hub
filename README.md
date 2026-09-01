@@ -22,7 +22,7 @@
 | `git-worktree-helper` | 2.1.0 | Productivity | 创建 / 清理 Git worktree 并同步本地代理与项目配置 |
 | `trip-forge` | 1.6.0 | Productivity | 调研并生成自包含、移动端优先的 HTML 旅行攻略报告 |
 | `obsidian-solution-designer` | 1.1.1 | Productivity | 为待实现的软件需求生成基于系统事实、可指导开发的后端或全栈详细设计；不用于普通 Obsidian 文档 |
-| `resume-forge` | 1.0.0 | Productivity | 基于真实材料撰写中文 Markdown 简历，并可按 JD 定制 |
+| `resume-forge` | 1.0.1 | Productivity | 基于真实材料撰写、优化或审阅中文 Markdown 简历，并可按 JD 定制 |
 
 ## 🚀 快速开始
 

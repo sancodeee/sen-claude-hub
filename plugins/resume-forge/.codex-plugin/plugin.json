@@ -1,23 +1,24 @@
 {
   "name": "resume-forge",
-  "version": "1.0.0",
-  "description": "Write truthful, job-targeted Chinese Markdown resume content from user-provided materials.",
+  "version": "1.0.1",
+  "description": "Write, optimize, or review truthful Chinese Markdown resumes from user-provided materials.",
   "author": {
     "name": "sen"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "ResumeForge 简历工坊",
-    "shortDescription": "Write truthful Chinese Markdown resumes tailored to job descriptions.",
-    "longDescription": "Create truthful Chinese Markdown resume content from real user materials, tailor it to a job description, organize it in a fixed structure, and check factual consistency.",
+    "shortDescription": "Write, optimize, or review truthful Chinese Markdown resumes.",
+    "longDescription": "Write, optimize, or review truthful Chinese Markdown resume content from real user materials, tailor it to a job description, organize it in a fixed structure, and check factual consistency before delivery.",
     "developerName": "sen",
     "category": "Productivity",
     "capabilities": [
-      "Truthful Chinese Markdown resume writing from real materials",
+      "Truthful Chinese Markdown resume writing and optimization from real materials",
+      "Resume review with prioritized factual and structural findings",
       "Job-description tailoring",
       "Fixed resume structure",
       "Factual consistency checks"
     ],
-    "defaultPrompt": "Use $resume-forge to write a truthful, job-targeted Chinese resume from my materials."
+    "defaultPrompt": "Use $resume-forge to write, optimize, or review a truthful Chinese resume from my materials and target JD."
   }
 }

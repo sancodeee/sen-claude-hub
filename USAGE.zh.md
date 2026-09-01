@@ -132,7 +132,7 @@ codex plugin add resume-forge@sen-claude-hub
 - 生成旅行攻略：`Create a complete HTML travel plan for my next trip.`
 - 运行端到端测试：`Run an end-to-end test for this web application.`
 - 生成全栈详细设计：`Create a full-stack detailed design from these requirements and repository facts.`
-- 基于真实材料撰写中文 Markdown 简历，并可选按 JD 定制：`$resume-forge 基于以下真实材料撰写中文 Markdown 简历，可选按目标 JD 定制：...`
+- 基于真实材料撰写、优化或审阅中文 Markdown 简历，并可选按 JD 定制：`$resume-forge 基于以下真实材料和目标 JD 优化这份中文 Markdown 简历：...`
 
 更多逐插件示例见下表的「Codex 示例 prompt」列。
 
@@ -150,7 +150,7 @@ codex plugin add resume-forge@sen-claude-hub
 | `git-worktree-helper` | `/git-worktree-helper:create`、`/git-worktree-helper:cleanup` | `Create a worktree for this task.` | 创建 / 清理 Git worktree |
 | `trip-forge` | `/trip-forge:invoke` | `Create a complete HTML travel plan for my next trip.` | 生成 HTML 旅行攻略报告 |
 | `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | 仅用于待实现需求的后端或全栈实现级详细设计；普通 Obsidian 总结、复盘、纪要、调研和知识笔记不触发 |
-| `resume-forge` | `/resume-forge:write` | `$resume-forge 基于以下真实材料撰写中文 Markdown 简历，可选按目标 JD 定制：...` | 基于真实材料撰写中文 Markdown 简历，并可选按 JD 定制 |
+| `resume-forge` | `/resume-forge:write` | `$resume-forge 基于以下真实材料和目标 JD 优化这份中文 Markdown 简历：...` | 基于真实材料撰写、优化或审阅中文 Markdown 简历，并可按 JD 定制 |
 
 ---
 

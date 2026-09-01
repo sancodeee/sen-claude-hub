@@ -1,4 +1,4 @@
 interface:
   display_name: "ResumeForge 简历工坊"
-  short_description: "基于真实材料生成并核验可投递的中文 Markdown 简历"
-  default_prompt: "Use $resume-forge to create a truthful Chinese Markdown resume from my real materials and target JD."
+  short_description: "基于真实材料撰写、优化或审阅中文 Markdown 简历"
+  default_prompt: "Use $resume-forge to write, optimize, or review a truthful Chinese Markdown resume from my real materials and target JD."

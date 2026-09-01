@@ -58,9 +58,9 @@
     },
     {
       "name": "resume-forge",
-      "description": "基于真实材料撰写中文 Markdown 简历，并可按 JD 定制。",
+      "description": "基于真实材料撰写、优化或审阅中文 Markdown 简历，并可按 JD 定制。",
       "source": "./plugins/resume-forge",
-      "version": "1.0.0"
+      "version": "1.0.1"
     }
   ]
 }

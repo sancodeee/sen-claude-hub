@@ -1,7 +1,7 @@
 {
   "name": "resume-forge",
-  "version": "1.0.0",
-  "description": "基于真实材料撰写并按职位描述定制的中文 Markdown 简历内容。",
+  "version": "1.0.1",
+  "description": "基于真实材料撰写、优化或审阅并按职位描述定制的中文 Markdown 简历内容。",
   "author": {
     "name": "sen"
   }
