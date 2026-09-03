@@ -16,9 +16,9 @@
     },
     {
       "name": "fintorq-code-style",
-      "description": "Official code style and development standards for Fintorq project. MUST be followed for all code generation.",
+      "description": "Code style and development standards for Fintorq Java backend repositories.",
       "source": "./plugins/fintorq-code-style",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "name": "agent-browser-integration-testing",
