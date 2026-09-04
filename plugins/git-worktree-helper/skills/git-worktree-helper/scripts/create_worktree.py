@@ -50,6 +50,14 @@ def validate_new_branch(repo: Path, branch: str) -> None:
         raise WorktreeError(f"新分支已存在：{branch}。请更换目标目录或使用 --new-branch 指定其他名称。")
 
 
+def validate_worktree_branch_name(target: Path, branch: str) -> None:
+    if branch.rsplit("/", maxsplit=1)[-1] != target.name:
+        raise WorktreeError(
+            f"worktree 目录名与分支名不匹配：目录={target.name}，分支={branch}。"
+            "目录名必须等于分支名的最后一级。"
+        )
+
+
 def validate_target(target: Path) -> Path:
     resolved = target.expanduser().resolve()
     if resolved.exists():
@@ -108,7 +116,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("target_dir", help="New worktree target directory. It must not already exist.")
     parser.add_argument("--base-branch", help="Base branch/ref used to create the new worktree branch.")
-    parser.add_argument("--new-branch", help="New branch name for the worktree. Defaults to target directory name.")
+    parser.add_argument(
+        "--new-branch",
+        help="New branch name. Its final component must match the target directory name.",
+    )
     parser.add_argument("--repo", default=".", help="Source repository path. Defaults to current directory.")
     parser.add_argument("--dry-run", action="store_true", help="Print planned actions without changing files.")
     return parser.parse_args(argv)
@@ -124,6 +135,7 @@ def main(argv: list[str]) -> int:
         new_branch = args.new_branch or target.name
         validate_base_ref(repo, base_branch)
         validate_new_branch(repo, new_branch)
+        validate_worktree_branch_name(target, new_branch)
 
         create_worktree(repo, target, base_branch, new_branch, args.dry_run)
 

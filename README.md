@@ -19,7 +19,7 @@
 | `agent-browser-integration-testing` | 1.0.0 | Productivity | 基于 agent-browser CLI 的浏览器自动化与端到端集成测试 |
 | `byd-vehicle-scrape` | 1.0.0 | Data | 爬取比亚迪车型配置与价格数据并生成 MySQL SQL |
 | `jenkins-cli` | 1.0.0 | Productivity | 本机 Jenkins CLI 使用指南与高风险操作边界控制 |
-| `git-worktree-helper` | 2.1.0 | Productivity | 创建 / 清理 Git worktree 并同步本地代理与项目配置 |
+| `git-worktree-helper` | 2.1.1 | Productivity | 创建 / 清理 Git worktree 并同步本地代理与项目配置 |
 | `trip-forge` | 1.6.0 | Productivity | 调研并生成自包含、移动端优先的 HTML 旅行攻略报告 |
 | `obsidian-solution-designer` | 1.1.1 | Productivity | 为待实现的软件需求生成基于系统事实、可指导开发的后端或全栈详细设计；不用于普通 Obsidian 文档 |
 | `resume-forge` | 1.0.1 | Productivity | 基于真实材料撰写、优化或审阅中文 Markdown 简历，并可按 JD 定制 |

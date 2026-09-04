@@ -92,7 +92,9 @@ python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scri
 
 - 如果用户传入 `--base-branch`，以该分支作为基准。
 - 如果用户不传 `--base-branch`，以当前目录项目正在使用的分支作为基准。
-- 每个 worktree 都会创建并检出一个新分支，默认新分支名为目标目录 basename。
+- 每个 worktree 都会创建并检出一个新分支；未指定 `--new-branch` 时，新分支名为目标目录 basename。
+- worktree 目标目录 basename 必须等于新分支名的最后一级。目录 `wk-demo` 搭配分支 `wk-demo` 或
+  `codex/wk-demo` 合法；目录 `demo` 搭配分支 `codex/wk-demo` 不合法，普通字符串包含关系不算匹配。
 - 实际命令形态是 `git worktree add -b <new_branch> <target_dir> <base_branch>`。
 - 基准分支不会被重复检出；它只作为新分支的起点。
 - 不使用 `git worktree add --force`。
@@ -145,6 +147,7 @@ cleanup 回收范围不包含 `.java-local.properties`；该文件只维持创�
 ## 使用原则
 
 - 执行前确认目标目录、基准分支和新分支名。
+- 创建、移动 worktree 或重命名分支时，必须始终保持目录 basename 等于分支名最后一级。当前脚本未提供移动或重命名能力；需要时应先扩展脚本并复用同一校验，不要绕过脚本直接操作。
 - 不把未提交改动复制到新 worktree，除非这些改动位于上述本地配置路径且文件系统中存在。
 - 如果用户只是询问怎么做，先给 dry-run 或命令说明。
 - 出错时优先展示脚本输出，不临场改成强制添加 worktree 或覆盖已有分支。

@@ -12,7 +12,7 @@ $ARGUMENTS
 核心指令：
 1. 使用 git-worktree-helper skill 中的脚本和安全规则处理 worktree 创建。
 2. 用户传入 `--base-branch` 时以该分支作为基准；未传入时以当前目录项目正在使用的分支作为基准。
-3. 每个 worktree 都创建自己的新分支，默认新分支名为目标目录 basename，可用 `--new-branch` 指定。
+3. 每个 worktree 都创建自己的新分支，默认新分支名为目标目录 basename。使用 `--new-branch` 时，目标目录 basename 必须等于分支名最后一级；例如目录 `wk-demo` 可搭配 `wk-demo` 或 `codex/wk-demo`，否则拒绝创建。
 4. 创建 worktree 后，只复制 skill 中列出的本地配置路径；不存在则跳过。
 5. 不使用 `git worktree add --force` 或 `-B`，如果目标目录或新分支已存在，报告原因。
 

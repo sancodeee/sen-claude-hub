@@ -186,6 +186,57 @@ class WorktreeSyncTest(unittest.TestCase):
         self.assertIn("config_sync_error", result.stdout)
         self.assertTrue(self.worktree.exists())
 
+    def test_rejects_branch_whose_last_component_differs_from_target_directory(self) -> None:
+        target = self.root / "urgent-demo"
+
+        result = self.run_script(
+            CREATE_SCRIPT,
+            str(target),
+            "--repo",
+            str(self.repo),
+            "--new-branch",
+            "codex/payment-hotfix",
+            "--dry-run",
+        )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("worktree 目录名与分支名不匹配", result.stderr)
+        self.assertFalse(target.exists())
+
+    def test_accepts_branch_namespace_when_last_component_matches_target_directory(self) -> None:
+        target = self.root / "namespaced-task"
+
+        result = self.run_script(
+            CREATE_SCRIPT,
+            str(target),
+            "--repo",
+            str(self.repo),
+            "--new-branch",
+            "codex/namespaced-task",
+            "--dry-run",
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("New branch: codex/namespaced-task", result.stdout)
+        self.assertFalse(target.exists())
+
+    def test_rejects_branch_when_directory_name_is_only_a_substring(self) -> None:
+        target = self.root / "wk-demo"
+
+        result = self.run_script(
+            CREATE_SCRIPT,
+            str(target),
+            "--repo",
+            str(self.repo),
+            "--new-branch",
+            "codex/prefix-wk-demo",
+            "--dry-run",
+        )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("目录名必须等于分支名的最后一级", result.stderr)
+        self.assertFalse(target.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
