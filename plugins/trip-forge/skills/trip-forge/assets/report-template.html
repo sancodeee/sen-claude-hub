@@ -10,12 +10,15 @@
      原样保留，不要改色、不要外链。所有报告统一这套视觉。
   3. 组件可复制/增减以适配行程：
      - 每个核心景点复制一张 .card.spot（四问写全）；
-     - 每天复制一段行程表 + 标题；
+     - 在 .itinerary-days 内按日期顺序复制完整的 article.itinerary-day，填写
+       data-date / data-label、当天标题与全部表格行；日期按钮由文末脚本自动生成；
      - 每条避坑复制一个 .pit；B 计划每条复制一个 .pb-item；以此类推。
   4. 角标含义固定：置信度 ✅稳定 / ⚠️需确认 / ❓不确定；
      天气依赖 ☀️强 / ⛅中 / 🏠弱。易变信息就近挂角标，并汇入文末来源附录。
      景点详情卡 h4 的 ⭐1–5 = 选景星级（评分模型见 references/template.md「四++ 选景决策」）。
   5. 六个维度 + 景点详情卡 + 来源附录全部保留，不得删节或压缩。
+  6. 文末行程脚本与 CSS 一起原样保留。完整行程直接写在 HTML 中，脚本仅增强
+     日期导航、整日横滑、展开全部；禁用脚本和打印时仍能阅读所有天的完整内容。
   ===========================================================================
 -->
 <html lang="zh-CN">
@@ -94,6 +97,81 @@
   tbody tr:nth-child(even){background:#faf8f3}
   td .slot{font-weight:700;color:var(--sea);white-space:nowrap}
   .opt{font-size:11px;background:var(--sand-warm);color:var(--ink-soft);padding:1px 6px;border-radius:6px;font-weight:600;margin-left:4px}
+  /* 行程：静态全文为基础，脚本就绪后按天横滑；其他章节的表格沿用上方样式 */
+  .itinerary [hidden]{display:none!important}
+  .itinerary button{font:inherit;cursor:pointer}
+  .itinerary button:disabled{opacity:.4;cursor:default}
+  .itinerary button:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+  .itinerary-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+  .itinerary-summary{font-size:12px;color:var(--ink-soft)}
+  .itinerary-expand{min-height:44px;padding:8px 0 8px 12px;border:0;background:transparent;color:var(--sea);font-size:12px!important;font-weight:700!important;white-space:nowrap}
+  .itinerary-nav{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--line) transparent;padding:3px 2px 12px;margin-bottom:2px}
+  .itinerary-tab{flex:1 0 106px;min-width:0;min-height:66px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--ink-soft);text-align:left}
+  .itinerary-tab strong{display:block;font-size:15px;line-height:1.5}
+  .itinerary-tab span{display:block;max-width:150px;margin-top:2px;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .itinerary-tab[aria-pressed="true"]{background:var(--sea);border-color:var(--sea);color:#fff}
+  .itinerary-tab:not([aria-pressed="true"]):hover{background:var(--foam)}
+  .itinerary-days{display:grid;gap:16px}
+  /* 定位上下文约束窄屏隐藏表头，防止屏幕外日卡的表头撑宽整张页面。 */
+  .itinerary-day{position:relative;min-width:0;overflow:hidden;border:1px solid #d6dfd9;border-radius:14px;background:#fff;scroll-margin-top:80px}
+  .itinerary-day-head{padding:18px 20px;background:var(--foam)}
+  .itinerary-day-date{font-size:12px;color:var(--sea)}
+  .itinerary-day-head h3{display:block;margin:8px 0 0;font-size:21px;line-height:1.4;overflow-wrap:anywhere}
+  .itinerary-table{min-width:0;table-layout:fixed;border-radius:0;box-shadow:none;font-size:12px}
+  .itinerary-table caption{padding:0 20px 15px;background:var(--foam);font-size:12px}
+  .itinerary-table th{padding:10px 8px;background:#f8faf8;color:var(--ink-soft);font-size:11.5px;font-weight:500;white-space:normal;border-bottom:1px solid #e5e9e3}
+  .itinerary-table th:nth-child(1){width:10%}
+  .itinerary-table th:nth-child(2){width:25%}
+  .itinerary-table th:nth-child(3){width:10%}
+  .itinerary-table th:nth-child(4){width:15%}
+  .itinerary-table th:nth-child(5){width:10%}
+  .itinerary-table th:nth-child(6){width:14%}
+  .itinerary-table th:nth-child(7){width:16%}
+  .itinerary-table td{padding:15px 8px;overflow-wrap:anywhere}
+  .itinerary-table th:first-child,.itinerary-table td:first-child{padding-left:15px}
+  .itinerary-table tbody tr:nth-child(even){background:transparent}
+  .itinerary-table td:nth-child(2){font-size:13px}
+  .itinerary-table .meal td:nth-child(2){color:#a44b2d}
+  .itinerary-note{margin:0;padding:12px 16px;background:#fdf7ef;border-top:1px solid #f2e8d7;color:#79543b;font-size:12px}
+  .itinerary-note b{color:#9d4b30}
+  .itinerary-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+  .itinerary-prev,.itinerary-next{min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--sea);font-size:12px!important}
+  .itinerary-position{text-align:center;color:var(--ink-soft);font-size:11.5px}
+  .itinerary-position strong{color:var(--sea);font-size:12px;margin-right:7px}
+  .itinerary.is-ready:not(.is-expanded) .itinerary-days{display:flex;align-items:flex-start;gap:14px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-radius:14px}
+  .itinerary.is-ready:not(.is-expanded) .itinerary-days::-webkit-scrollbar{display:none}
+  .itinerary.is-ready:not(.is-expanded) .itinerary-day{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
+  @media(max-width:650px){
+    #d1 .sec-sub{padding-left:0}
+    .itinerary-nav{scrollbar-width:none}
+    .itinerary-nav::-webkit-scrollbar{display:none}
+    .itinerary-day-head{padding:16px}
+    .itinerary-table,.itinerary-table tbody{display:block}
+    .itinerary-table caption{display:block;text-align:left;padding:0 16px 14px}
+    .itinerary-table thead{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+    .itinerary-table tbody tr{display:grid;grid-template-columns:43px minmax(0,1fr) minmax(0,1fr);column-gap:10px;row-gap:4px;margin:0 14px;padding:15px 0;border-bottom:1px solid #eee}
+    .itinerary-table tbody tr:last-child{border-bottom:0}
+    .itinerary-table td{padding:0;border:0;font-size:12px;color:var(--ink-soft)}
+    .itinerary-table td:first-child{padding:1px 0 0;grid-column:1;grid-row:1 / 6}
+    .itinerary-table td:nth-child(2){grid-column:2 / -1;grid-row:1;margin-bottom:3px;font-size:14px;color:var(--ink)}
+    .itinerary-table td:nth-child(3){grid-column:2;grid-row:2}
+    .itinerary-table td:nth-child(4){grid-column:2 / -1;grid-row:3}
+    .itinerary-table td:nth-child(5){grid-column:3;grid-row:2}
+    .itinerary-table td:nth-child(6){grid-column:2 / -1;grid-row:4}
+    .itinerary-table td:nth-child(7){grid-column:2 / -1;grid-row:5}
+    .itinerary-table td:nth-child(3)::before{content:"天气 · "}
+    .itinerary-table td:nth-child(4)::before{content:"交通 · "}
+    .itinerary-table td:nth-child(5)::before{content:"时长 · "}
+    .itinerary-table td:nth-child(6)::before{content:"人流 · "}
+    .itinerary-table td:nth-child(7)::before{content:"雨备 · "}
+    .itinerary-position strong{display:block;margin-right:0}
+  }
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  @media print{
+    .itinerary .itinerary-toolbar,.itinerary .itinerary-nav,.itinerary .itinerary-pager{display:none!important}
+    .itinerary.is-ready .itinerary-days{display:block!important;height:auto!important;overflow:visible!important}
+    .itinerary.is-ready .itinerary-day{overflow:visible;margin-bottom:18px;break-inside:avoid}
+  }
   /* card / 结论卡 / 景点卡 / 慢时光卡 */
   .card{background:#fff;border-radius:16px;padding:18px;margin:14px 0;box-shadow:var(--shadow);border:1px solid #efe9dc}
   .card.spot{border-left:5px solid var(--sea)}
@@ -209,22 +287,41 @@
   <div class="sec-head"><div class="sec-num">1</div><h2>极简行程表</h2></div>
   <p class="sec-sub">每天不排满，留足吃饭/喝咖啡/临时调整。可去可不去的标「可选」。细节见下方景点详情卡。三餐随动线落进表内。</p>
 
-  <!-- 每天复制一段：h3 标题 + 一张 table。天气依赖/人流/雨天替代为必填列。每天表内含午餐、晚餐行（店/区域+人均），在途解决的注明即可 -->
-  <h3><span class="dot"></span>Day 1 · {{日期 周几}} — {{当天主题}}</h3>
-  <div class="tbl-wrap">
-  <table>
+  <div class="itinerary" data-itinerary>
+    <div class="itinerary-toolbar" hidden>
+      <span class="itinerary-summary">{{出行日期范围}}</span>
+      <button type="button" class="itinerary-expand" aria-expanded="false">展开全部 ↗</button>
+    </div>
+    <nav class="itinerary-nav" aria-label="选择行程日期，左右滑动查看更多" hidden></nav>
+    <div class="itinerary-days">
+    <!-- 每天复制完整 article；只填静态内容，保留类名和七列顺序，不手写日期按钮或独立数据数组。
+         data-date 填月/日，data-label 填当天短主题；天气依赖、人流、雨备以及午餐、晚餐均须保留。 -->
+    <article class="itinerary-day" data-date="{{月/日}}" data-label="{{当天短主题}}">
+      <header class="itinerary-day-head">
+        <div class="itinerary-day-date"><strong class="itinerary-day-number">Day 1</strong> · {{日期 周几}}</div>
+        <h3>{{当天主题}}</h3>
+      </header>
+  <table class="itinerary-table">
     <caption>{{当天一句话定调，如：抵达不远行，老城热身}}</caption>
-    <thead><tr><th>时段</th><th>安排</th><th>天气依赖</th><th>建议交通</th><th>耗时/游玩</th><th>人流提示</th><th>雨天替代</th></tr></thead>
+    <thead><tr><th scope="col">时段</th><th scope="col">安排</th><th scope="col">天气依赖</th><th scope="col">建议交通</th><th scope="col">耗时/游玩</th><th scope="col">人流提示</th><th scope="col">雨天替代</th></tr></thead>
     <tbody>
       <tr><td><span class="slot">上午</span></td><td>{{安排}} <span class="badge b-check">⚠️</span></td><td><span class="badge w-weak">🏠</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
-      <tr><td><span class="slot">午餐</span></td><td>{{店名/类型 · 街区 · 招牌菜 · 人均}}（详见吃喝指南）<span class="badge b-check">⚠️</span></td><td><span class="badge w-weak">🏠</span></td><td>{{从上一点位走法+耗时}}</td><td>约{{用餐时长}}</td><td>{{饭点排队提示}}</td><td>{{室内不受影响/平替店}}</td></tr>
+      <tr class="meal"><td><span class="slot">午餐</span></td><td>{{店名/类型 · 街区 · 招牌菜 · 人均}}（详见吃喝指南）<span class="badge b-check">⚠️</span></td><td><span class="badge w-weak">🏠</span></td><td>{{从上一点位走法+耗时}}</td><td>约{{用餐时长}}</td><td>{{饭点排队提示}}</td><td>{{室内不受影响/平替店}}</td></tr>
       <tr><td><span class="slot">下午</span></td><td>{{安排}}</td><td><span class="badge w-mid">⛅</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
-      <tr><td><span class="slot">晚餐</span></td><td>{{店名/类型 · 街区 · 招牌菜 · 人均}}（详见吃喝指南）</td><td><span class="badge w-weak">🏠</span></td><td>{{走法+耗时}}</td><td>约{{用餐时长}}</td><td>{{饭点排队提示}}</td><td>{{室内不受影响/平替店}}</td></tr>
+      <tr class="meal"><td><span class="slot">晚餐</span></td><td>{{店名/类型 · 街区 · 招牌菜 · 人均}}（详见吃喝指南）</td><td><span class="badge w-weak">🏠</span></td><td>{{走法+耗时}}</td><td>约{{用餐时长}}</td><td>{{饭点排队提示}}</td><td>{{室内不受影响/平替店}}</td></tr>
       <tr><td><span class="slot">晚上</span></td><td>{{安排}} <span class="opt">可选</span></td><td><span class="badge w-strong">☀️</span></td><td>{{方式+耗时}}</td><td>{{游玩时长}}</td><td>{{人流时段}}</td><td>{{雨天替代}}</td></tr>
     </tbody>
   </table>
+      <p class="itinerary-note"><b>当天取舍：</b>{{当天保留什么 / 可取消什么}}</p>
+    </article>
+    <!-- … Day 2、Day 3 … 按实际天数复制 article.itinerary-day，日期顺序与行程一致 … -->
+    </div>
+    <div class="itinerary-pager" hidden>
+      <button type="button" class="itinerary-prev" aria-label="查看前一天">‹ 前一天</button>
+      <div class="itinerary-position"><strong aria-live="polite" aria-atomic="true"></strong><span>左右滑动，按天查看</span></div>
+      <button type="button" class="itinerary-next" aria-label="查看后一天">后一天 ›</button>
+    </div>
   </div>
-  <!-- … Day 2、Day 3 … 按天数复制上面整段 … -->
 
   <!-- 二选一/关键取舍用结论卡（决断，不模棱两可） -->
   <div class="verdict">{{关键取舍结论，如：D3 选 A 不选 B，因为……}}</div>
@@ -424,5 +521,159 @@
   <p>{{一句温暖收尾}}</p>
 </footer>
 
+<!-- 行程交互：原样保留，放在全部静态正文之后；无外部依赖。 -->
+<script>
+(() => {
+  document.querySelectorAll('[data-itinerary]').forEach((root, itineraryIndex) => {
+    const deck = root.querySelector('.itinerary-days');
+    const days = Array.from(deck.querySelectorAll('.itinerary-day'));
+    if (!days.length) return;
+    const nav = root.querySelector('.itinerary-nav');
+    const toolbar = root.querySelector('.itinerary-toolbar');
+    const expandButton = root.querySelector('.itinerary-expand');
+    const pager = root.querySelector('.itinerary-pager');
+    const previousButton = root.querySelector('.itinerary-prev');
+    const nextButton = root.querySelector('.itinerary-next');
+    const position = root.querySelector('.itinerary-position strong');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let activeIndex = 0;
+    let expanded = false;
+    let printing = false;
+    let scrollTimer;
+    let previousWidth = 0;
+    deck.id = `itinerary-${itineraryIndex + 1}-days`;
+    expandButton.setAttribute('aria-controls', deck.id);
+
+    // 导航从静态正文派生，避免日期按钮、数据数组与实际行程出现三份不同内容。
+    const buttons = days.map((day, index) => {
+      day.id = `itinerary-${itineraryIndex + 1}-day-${index + 1}`;
+      const heading = day.querySelector('h3');
+      heading.id = `${day.id}-title`;
+      day.setAttribute('aria-labelledby', heading.id);
+      day.querySelector('.itinerary-day-number').textContent = `Day ${index + 1}`;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'itinerary-tab';
+      button.setAttribute('aria-controls', day.id);
+      const number = document.createElement('strong');
+      number.textContent = `Day ${index + 1}`;
+      const label = document.createElement('span');
+      label.textContent = [day.dataset.date, day.dataset.label].filter(Boolean).join(' · ');
+      button.title = `${number.textContent} · ${label.textContent}`;
+      button.append(number, label);
+      nav.append(button);
+      button.addEventListener('click', () => selectDay(index));
+      button.addEventListener('keydown', event => {
+        const targets = { ArrowLeft: index - 1, ArrowRight: index + 1, Home: 0, End: days.length - 1 };
+        if (!(event.key in targets)) return;
+        event.preventDefault();
+        const target = Math.max(0, Math.min(days.length - 1, targets[event.key]));
+        selectDay(target);
+        buttons[target].focus({ preventScroll: true });
+      });
+      return button;
+    });
+
+    function dayOffset(index) {
+      return days[index].getBoundingClientRect().left - deck.getBoundingClientRect().left + deck.scrollLeft;
+    }
+
+    function updateHeight() {
+      deck.style.height = expanded || printing ? 'auto' : `${Math.ceil(days[activeIndex].getBoundingClientRect().height)}px`;
+    }
+
+    function updateSelection(index) {
+      activeIndex = index;
+      buttons.forEach((button, dayIndex) => button.setAttribute('aria-pressed', String(dayIndex === index)));
+      days.forEach((day, dayIndex) => {
+        const offscreen = !expanded && !printing && dayIndex !== index;
+        day.inert = offscreen;
+        day.setAttribute('aria-hidden', String(offscreen));
+      });
+      previousButton.disabled = index === 0;
+      nextButton.disabled = index === days.length - 1;
+      position.textContent = `${String(index + 1).padStart(2, '0')} / ${String(days.length).padStart(2, '0')}`;
+      updateHeight();
+      const buttonRect = buttons[index].getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+      if (buttonRect.left < navRect.left || buttonRect.right > navRect.right) {
+        nav.scrollTo({ left: nav.scrollLeft + buttonRect.left - navRect.left - (nav.clientWidth - buttonRect.width) / 2, behavior: 'instant' });
+      }
+    }
+
+    function updateExpanded() {
+      // 展开会重置横向位置，清掉旧的滚动回调，避免收起时误选 Day 1。
+      clearTimeout(scrollTimer);
+      root.classList.toggle('is-expanded', expanded);
+      expandButton.setAttribute('aria-expanded', String(expanded));
+      expandButton.textContent = expanded ? '收起，按天查看 ↙' : '展开全部 ↗';
+      pager.hidden = expanded || days.length === 1;
+      updateSelection(activeIndex);
+    }
+
+    function selectDay(index, animate = true) {
+      clearTimeout(scrollTimer);
+      const adjacent = Math.abs(index - activeIndex) === 1;
+      if (expanded) {
+        expanded = false;
+        updateExpanded();
+      }
+      updateSelection(index);
+      deck.scrollTo({ left: dayOffset(index), behavior: animate && adjacent && !reducedMotion.matches ? 'smooth' : 'instant' });
+    }
+
+    previousButton.addEventListener('click', () => selectDay(Math.max(0, activeIndex - 1)));
+    nextButton.addEventListener('click', () => selectDay(Math.min(days.length - 1, activeIndex + 1)));
+    expandButton.addEventListener('click', () => {
+      expanded = !expanded;
+      updateExpanded();
+      if (!expanded) selectDay(activeIndex, false);
+    });
+    deck.addEventListener('scroll', () => {
+      if (expanded || printing) return;
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        if (expanded || printing) return;
+        let nearest = 0;
+        days.forEach((day, index) => {
+          if (Math.abs(dayOffset(index) - deck.scrollLeft) < Math.abs(dayOffset(nearest) - deck.scrollLeft)) nearest = index;
+        });
+        updateSelection(nearest);
+      }, 120);
+    }, { passive: true });
+
+    function resize() {
+      updateHeight();
+      if (deck.clientWidth !== previousWidth) {
+        previousWidth = deck.clientWidth;
+        if (!expanded && !printing) selectDay(activeIndex, false);
+      }
+    }
+
+    // 打印和禁用脚本均保留所有日期；打印后恢复屏幕上原先选中的日期。
+    window.addEventListener('beforeprint', () => {
+      clearTimeout(scrollTimer);
+      printing = true;
+      updateSelection(activeIndex);
+    });
+    window.addEventListener('afterprint', () => {
+      printing = false;
+      updateSelection(activeIndex);
+      if (!expanded) selectDay(activeIndex, false);
+    });
+    root.classList.add('is-ready');
+    toolbar.hidden = nav.hidden = pager.hidden = days.length === 1;
+    updateSelection(0);
+    previousWidth = deck.clientWidth;
+    if ('ResizeObserver' in window) {
+      const observer = new ResizeObserver(resize);
+      observer.observe(deck);
+      days.forEach(day => observer.observe(day));
+    } else {
+      window.addEventListener('resize', resize);
+    }
+  });
+})();
+</script>
 </body>
 </html>
