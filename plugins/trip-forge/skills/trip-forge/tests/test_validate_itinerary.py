@@ -82,6 +82,36 @@ class ItineraryValidationTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertIn("唯一的 table.itinerary-table", result.stderr)
 
+    def test_rejects_nested_day_class_that_breaks_script_initialization(self):
+        report = report_with_days(2).replace("</article>", '<div class="itinerary-day"></div></article>', 1)
+        result = run_validator(report, 2)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("嵌套", result.stderr)
+
+    def test_rejects_duplicate_deck_before_real_day_cards(self):
+        report = report_with_days(2).replace('<div class="itinerary-toolbar" hidden>', '<div class="itinerary-toolbar" hidden><div class="itinerary-days"></div>', 1)
+        result = run_validator(report, 2)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("itinerary-days", result.stderr)
+
+    def test_rejects_duplicate_pager_before_real_controls(self):
+        report = report_with_days(2).replace('<div class="itinerary-toolbar" hidden>', '<div class="itinerary-toolbar" hidden><div class="itinerary-pager"></div>', 1)
+        result = run_validator(report, 2)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("itinerary-pager", result.stderr)
+
+    def test_rejects_wrong_tag_deck_before_real_day_cards(self):
+        report = report_with_days(2).replace('<div class="itinerary-toolbar" hidden>', '<div class="itinerary-toolbar" hidden><span class="itinerary-days"></span>', 1)
+        result = run_validator(report, 2)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("itinerary-days", result.stderr)
+
+    def test_rejects_wrong_tag_pager_before_real_controls(self):
+        report = report_with_days(2).replace('<div class="itinerary-toolbar" hidden>', '<div class="itinerary-toolbar" hidden><span class="itinerary-pager"></span>', 1)
+        result = run_validator(report, 2)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("itinerary-pager", result.stderr)
+
     def test_rejects_missing_expand_button(self):
         report = re.sub(r'<button type="button" class="itinerary-expand".*?</button>', "", report_with_days(2))
         result = run_validator(report, 2)

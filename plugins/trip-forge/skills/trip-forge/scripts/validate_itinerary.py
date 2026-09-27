@@ -75,6 +75,10 @@ def direct_child(parent, tag=None, class_name=None):
     return [child for child in parent.children if (tag is None or child.tag == tag) and (class_name is None or child.has_class(class_name))]
 
 
+def is_only_match(root, element, class_name):
+    return element is not None and list(root.descendants(class_name=class_name)) == [element]
+
+
 def check_day(day, index, errors):
     prefix = f"第 {index} 张日卡"
     date = day.attrs.get("data-date", "").strip()
@@ -144,18 +148,22 @@ def validate(report_html, expected_days, template_html):
                 "翻页控件": ("div", "itinerary-pager"),
             }
             for name, (tag, class_name) in controls.items():
-                if not one(direct_child(itinerary, tag, class_name)):
+                direct = one(direct_child(itinerary, tag, class_name))
+                if not is_only_match(itinerary, direct, class_name):
                     errors.append(f"行程区缺少唯一的{name} .{class_name}")
             toolbar = one(direct_child(itinerary, "div", "itinerary-toolbar"))
             pager = one(direct_child(itinerary, "div", "itinerary-pager"))
-            if toolbar is not None and not one(list(toolbar.descendants(tag="button", class_name="itinerary-expand"))):
-                errors.append("工具栏缺少唯一的 button.itinerary-expand")
+            if toolbar is not None:
+                expand = one(list(toolbar.descendants(tag="button", class_name="itinerary-expand")))
+                if not is_only_match(itinerary, expand, "itinerary-expand"):
+                    errors.append("工具栏缺少唯一的 button.itinerary-expand")
             if pager is not None:
                 for class_name in ("itinerary-prev", "itinerary-next"):
-                    if not one(list(pager.descendants(tag="button", class_name=class_name))):
+                    button = one(list(pager.descendants(tag="button", class_name=class_name)))
+                    if not is_only_match(itinerary, button, class_name):
                         errors.append(f"翻页控件缺少唯一的 button.{class_name}")
                 position = one(list(pager.descendants(class_name="itinerary-position")))
-                if position is None or not one(list(position.descendants(tag="strong"))):
+                if not is_only_match(itinerary, position, "itinerary-position") or not one(list(position.descendants(tag="strong"))):
                     errors.append("翻页控件缺少 .itinerary-position strong 页码")
             deck = one(direct_child(itinerary, "div", "itinerary-days"))
             if deck is not None:
@@ -164,6 +172,8 @@ def validate(report_html, expected_days, template_html):
                 days = direct_child(deck, "article", "itinerary-day")
                 if len(days) != expected_days or len(deck.children) != len(days):
                     errors.append(f"日卡数量应为 {expected_days}，且每一天须是 .itinerary-days 的直接 article.itinerary-day 子元素；实际为 {len(days)}")
+                if list(deck.descendants(class_name="itinerary-day")) != days:
+                    errors.append("日卡内部不能嵌套或额外使用 .itinerary-day，脚本会把它误认为另一天")
                 for index, day in enumerate(days, 1):
                     if set(day.attrs.get("class", "").split()) != {"itinerary-day"} or "style" in day.attrs or "hidden" in day.attrs:
                         errors.append(f"第 {index} 张日卡不能用内联样式、hidden 或额外状态类覆盖横滑布局")
