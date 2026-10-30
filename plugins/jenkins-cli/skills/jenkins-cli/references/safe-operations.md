@@ -5,11 +5,19 @@
 
 ## 版本与身份
 
-查看 Jenkins CLI 版本：
+查看 Jenkins **服务端**版本（需要连接服务）：
 
 ```bash
 jenkins-cli version
 ```
+
+查看本地 Jenkins CLI JAR 版本（不连接服务）：
+
+```bash
+jenkins-cli -version
+```
+
+两者分别标识服务端和客户端，排查版本兼容性时应分别记录。随包 wrapper 的 `--check` 仅检查本地依赖和配置，不代表服务端连通或认证成功。
 
 查看当前认证身份与权限：
 

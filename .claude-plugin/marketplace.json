@@ -36,7 +36,7 @@
       "name": "jenkins-cli",
       "description": "本机 Jenkins CLI 使用指南与调用约定，适用于查询、诊断、构建说明和高风险操作边界控制。",
       "source": "./plugins/jenkins-cli",
-      "version": "1.0.0"
+      "version": "1.0.2"
     },
     {
       "name": "git-worktree-helper",

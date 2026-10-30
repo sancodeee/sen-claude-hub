@@ -152,6 +152,8 @@ codex plugin add resume-forge@sen-claude-hub
 | `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | 仅用于待实现需求的后端或全栈实现级详细设计；普通 Obsidian 总结、复盘、纪要、调研和知识笔记不触发 |
 | `resume-forge` | `/resume-forge:write` | `$resume-forge 基于以下真实材料和目标 JD 优化这份中文 Markdown 简历：...` | 基于真实材料撰写、优化或审阅中文 Markdown 简历，并可按 JD 定制 |
 
+`jenkins-cli` 还需准备 Java、官方 CLI JAR 和本地认证配置；插件自带 wrapper，首次使用请参阅 [Jenkins CLI 安装说明](plugins/jenkins-cli/README.md)。
+
 ---
 
 ## E. 故障排查

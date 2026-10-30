@@ -43,8 +43,8 @@ Scripts are then invoked as `"${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/<na
 - **global-java-code-style** / **fintorq-code-style** — reference-only skills (no scripts) providing Java coding standards; `fintorq-code-style` is project-specific and marked MUST-follow.
 - **agent-browser-integration-testing** — browser E2E testing driven by the external `agent-browser` CLI; includes `scripts/validate-report.js` and report templates.
 - **byd-vehicle-scrape** — Node + Playwright scraper that produces JSON then SQL.
-- **jenkins-cli** — guidance + risk-tiered operating rules for the local `jenkins-cli`; reference-only, splits safe / change / dangerous operations across `references/`.
-- **git-worktree-helper** — Python scripts to create worktrees, sync local agent/project config, and safely reclaim config before cleanup. The only plugin with automated tests.
+- **jenkins-cli** — guidance + risk-tiered operating rules, a portable Bash wrapper and Python unittest coverage; splits safe / change / dangerous operations across `references/`.
+- **git-worktree-helper** — Python scripts to create worktrees, sync local agent/project config, and safely reclaim config before cleanup. Includes automated tests.
 
 ## Commands & tooling
 

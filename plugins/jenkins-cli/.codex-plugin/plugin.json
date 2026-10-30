@@ -1,6 +1,6 @@
 {
   "name": "jenkins-cli",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Safe usage guidance and workflows for the local Jenkins CLI.",
   "author": {
     "name": "sen"

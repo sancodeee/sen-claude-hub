@@ -152,6 +152,8 @@ See the "Codex example prompt" column below for more per-plugin examples.
 | `obsidian-solution-designer` | `/obsidian-solution-designer:design` | `Create a full-stack detailed design from these requirements and repository facts.` | Only for implementation-ready backend or full-stack designs for concrete software requirements; general Obsidian summaries, retrospectives, meeting minutes, research reports, and notes do not trigger it |
 | `resume-forge` | `/resume-forge:write` | `$resume-forge Optimize this Chinese Markdown resume using the following real materials and target JD: ...` | Write, optimize, or review a Chinese Markdown resume from real materials, optionally tailored to a JD |
 
+`jenkins-cli` additionally requires Java, the official CLI JAR, and local authentication settings. It includes a wrapper; see the [Jenkins CLI setup guide](plugins/jenkins-cli/README.md).
+
 ---
 
 ## E. Troubleshooting
