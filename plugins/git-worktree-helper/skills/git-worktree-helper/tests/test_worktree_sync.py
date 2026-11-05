@@ -881,6 +881,80 @@ class WorktreeSyncTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertEqual(expected, self.git("rev-parse", "HEAD", cwd=target).stdout.strip())
 
+    def create_unique_detached_commit(self) -> str:
+        self.git("checkout", "--detach", cwd=self.worktree)
+        (self.worktree / "detached-code.txt").write_text("unique detached work\n", encoding="utf-8")
+        self.git("add", "detached-code.txt", cwd=self.worktree)
+        self.git("commit", "-qm", "unique detached work", cwd=self.worktree)
+        return self.git("rev-parse", "HEAD", cwd=self.worktree).stdout.strip()
+
+    def test_unique_detached_commit_blocks_default_cleanup(self) -> None:
+        commit = self.create_unique_detached_commit()
+
+        result = self.cleanup()
+
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn("detached_unreferenced", result.stdout)
+        self.assertIn(commit, result.stdout)
+        self.assertTrue(self.worktree.exists())
+        self.assertEqual(commit, self.git("rev-parse", "HEAD", cwd=self.worktree).stdout.strip())
+
+    def test_keep_branch_does_not_exempt_unique_detached_commit(self) -> None:
+        commit = self.create_unique_detached_commit()
+
+        result = self.cleanup("--keep-branch")
+
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn("detached_unreferenced", result.stdout)
+        self.assertTrue(self.worktree.exists())
+        self.assertEqual(commit, self.git("rev-parse", "HEAD", cwd=self.worktree).stdout.strip())
+
+    def test_merged_detached_head_can_be_cleaned(self) -> None:
+        self.git("checkout", "--detach", cwd=self.worktree)
+
+        result = self.cleanup()
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(self.worktree.exists())
+
+    def test_named_backup_preserves_detached_commit_after_cleanup(self) -> None:
+        commit = self.create_unique_detached_commit()
+        self.git("branch", "keep-detached", commit)
+
+        result = self.cleanup()
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(self.worktree.exists())
+        self.assertEqual(commit, self.git("rev-parse", "refs/heads/keep-detached").stdout.strip())
+
+    def test_explicit_force_can_discard_unique_detached_commit(self) -> None:
+        self.create_unique_detached_commit()
+        precheck = self.cleanup()
+        self.assertEqual(2, precheck.returncode, precheck.stdout + precheck.stderr)
+
+        result = self.cleanup("--force")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(self.worktree.exists())
+
+    def test_deleted_detached_backup_before_removal_blocks_cleanup(self) -> None:
+        commit = self.create_unique_detached_commit()
+        self.git("branch", "keep-detached", commit)
+        real_apply = remove_worktree.apply_sync
+
+        def delete_backup_after_sync(*args, **kwargs):
+            real_apply(*args, **kwargs)
+            self.git("branch", "-D", "keep-detached")
+
+        output = io.StringIO()
+        with patch.object(remove_worktree, "apply_sync", side_effect=delete_backup_after_sync), contextlib.redirect_stdout(output):
+            code = remove_worktree.main([str(self.worktree), "--repo", str(self.repo)])
+
+        self.assertEqual(2, code, output.getvalue())
+        self.assertIn("worktree_changed", output.getvalue())
+        self.assertTrue(self.worktree.exists())
+        self.assertEqual(commit, self.git("rev-parse", "HEAD", cwd=self.worktree).stdout.strip())
+
     def test_accepts_branch_namespace_when_last_component_matches_target_directory(self) -> None:
         target = self.root / "namespaced-task"
 

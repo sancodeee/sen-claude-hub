@@ -148,6 +148,19 @@ def branch_is_merged(repo: Path, branch: str) -> tuple[bool, str]:
     return False, f"branch {branch} not merged into {base}"
 
 
+def detached_commit_is_preserved(repo: Path, commit: str) -> bool:
+    ancestry = run_git(repo, ["merge-base", "--is-ancestor", commit, "HEAD"], check=False)
+    if ancestry.returncode == 0:
+        return True
+    if ancestry.returncode != 1:
+        raise WorktreeError(ancestry.stderr.strip() or "无法检查 detached HEAD 的提交可达性")
+    references = run_git(repo, [
+        "for-each-ref", f"--contains={commit}", "--format=%(refname)",
+        "refs/heads/", "refs/tags/", "refs/remotes/",
+    ])
+    return bool(references.stdout.strip())
+
+
 def run_prechecks(
     main_repo: Path,
     target: Path,
@@ -171,7 +184,14 @@ def run_prechecks(
         failures.append(("dirty_worktree", detail))
 
     branch = entry.get("branch")
-    if not keep_branch and branch:
+    if branch is None:
+        commit = run_git(target, ["rev-parse", "HEAD"]).stdout.strip()
+        if not detached_commit_is_preserved(main_repo, commit):
+            failures.append((
+                "detached_unreferenced",
+                f"detached HEAD {commit} 未被主 HEAD 或保留引用包含；--keep-branch 不能为其创建引用",
+            ))
+    elif not keep_branch:
         merged, detail = branch_is_merged(main_repo, branch)
         if not merged:
             failures.append(("branch_unmerged", detail))
@@ -191,7 +211,7 @@ def print_precheck_report(failures: list[tuple[str, str]]) -> None:
     if hard_failure:
         print("ACTION REQUIRED: 此类问题不能通过 --force 绕过；请更正目标、保留分支或处理同步问题后重试。")
     else:
-        print("ACTION REQUIRED: 若确认丢弃这些改动 / 强制删除未合并分支，请使用 --force 重新执行。")
+        print("ACTION REQUIRED: 若确认丢弃这些改动、未合并分支或无引用提交，请使用 --force 重新执行。")
 
 
 def remove_worktree(
@@ -227,6 +247,8 @@ def remove_worktree(
 
     verify_cleanup_state(main_repo, target, cleanup_state)
     verify_sync_state(main_repo, target, sync_plan, after_sync=True)
+    if branch is None and not force_branch and not detached_commit_is_preserved(main_repo, cleanup_state.target_head):
+        raise WorktreeChanged("detached HEAD 的保留引用发生变化，请保存提交并重新预检。")
     result = run_git(main_repo, remove_cmd, check=False)
     if result.returncode != 0:
         detail = result.stderr.strip() or result.stdout.strip()
@@ -248,7 +270,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("target_dir", help="要清理的 worktree 目录。")
     parser.add_argument("--repo", default=".", help="源仓库路径，默认当前目录。")
     parser.add_argument("--keep-branch", action="store_true", help="仅移除 worktree，保留分支。")
-    parser.add_argument("--force", action="store_true", help="允许丢弃未提交及忽略文件、删除未合并分支；不绕过配置及主 worktree/HEAD 保护。")
+    parser.add_argument("--force", action="store_true", help="允许丢弃未提交及忽略文件、未合并分支或无引用提交；不绕过配置及主 worktree/HEAD 保护。")
     parser.add_argument("--dry-run", action="store_true", help="仅打印计划动作。")
     return parser.parse_args(argv)
 

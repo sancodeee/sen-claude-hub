@@ -48,6 +48,12 @@ git -C "<target_dir>" rev-parse --git-dir
 
 结合输出中的 `REMOVED worktree`、`DELETED branch` 和只读 worktree/分支查询确认实际状态。报告“目录已删除、分支保留”及原因；不要把整个操作视为完全未执行，再对已删除目录盲目重跑，也不要绕过脚本执行 `git branch -D`。
 
+## Detached HEAD 的独有提交
+
+`detached_unreferenced` 表示该提交既未被主 HEAD 包含，也未被本地分支、标签或远程跟踪引用包含。保留目标 worktree，先为输出的提交 SHA 创建明确的保留分支或标签，再默认重试；`--keep-branch` 本身不会建立引用。
+
+如果用户明确要丢弃该提交，说明移除后提交可能失去引用，再沿用其具体授权使用 `--force`。清理期间也要暂停对这些保留引用的删除或重写；删除前检测到引用消失会以 `worktree_changed` 阻断，不能直接强制绕过该变化检测。
+
 ## 参数或 Git 命令失败
 
 退出 `1` 不保证没有副作用。先区分参数校验失败、创建部分成功、清理部分成功，再报告下一步。

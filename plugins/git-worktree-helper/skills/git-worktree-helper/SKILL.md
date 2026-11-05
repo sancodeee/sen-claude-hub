@@ -85,6 +85,8 @@ python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scri
 
 有已暂存的受管配置时，脚本会实际比较索引对象、类型及可执行位与工作区，差异以 `config_index_conflict` 阻断，包括被 `assume-unchanged` / `skip-worktree` 隐藏的差异；两份内容一致时正常回收。不能只依据 `git status` 的路径分类就自动丢弃索引版本。
 
+目标处于 detached HEAD 时，必须确认其提交已包含在主 HEAD 中，或被本地分支、标签、远程跟踪引用包含。没有保留引用时默认阻断；`--keep-branch` 不会替 detached HEAD 创建分支，不能免除检查。真正删除前再次确认保留引用仍存在。
+
 主目录按实际主工作树身份、Git 注册信息及已验证的插件定位元数据确定，不根据 `.git` 目录名或调用位置猜测。旧的独立元数据布局若无法确定主目录，停止并用 `--repo "<真实主目录>"` 重试；没有主工作树的 bare 仓库不作为配置回收目的地。
 
 首次调用必须不带 `--force`；可保留用户要求的 `--keep-branch`、`--dry-run`：
@@ -99,7 +101,7 @@ python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scri
 | `--keep-branch` | 仅删除目录，保留分支；不跳过文件或配置检查 |
 | `--repo` | 指定所属仓库；即使在 linked worktree 中调用，配置回收目的地仍是主 worktree |
 | `--dry-run` | 打印逐文件计划及删除命令，不同步、不删除；仍执行预检 |
-| `--force` | 经默认预检后，允许丢弃非受管本地文件并删除未合并分支；不能绕过下表中的硬性阻断 |
+| `--force` | 经默认预检后，允许丢弃非受管本地文件、未合并分支或明确授权丢弃的无引用提交；不能绕过下表中的硬性阻断 |
 
 只有配置路径需要强制移除时，脚本会在回收成功后自动使用 Git 的强制移除；该行为不授权丢弃其他路径的数据。
 
@@ -119,9 +121,10 @@ python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scri
 | `config_sync_changed` / `worktree_changed` | 停止并保留 worktree；暂停其他写入，检查新增变更后重新默认预检，不强制；恢复细节见 [恢复指引](references/recovery.md) |
 | `dirty_worktree` | 展示路径，说明含未提交、未追踪或忽略文件；保存后重试，或在明确授权丢弃后使用 `--force` |
 | `branch_unmerged` | 说明合并检查以主 worktree 当前 HEAD 为准；可按用户要求保留分支，或在明确授权丢弃提交后使用 `--force` |
+| `detached_unreferenced` | 展示提交 SHA，说明 `--keep-branch` 不能保存无分支提交；先用分支/标签保存该提交后默认重试，或在明确授权丢弃该提交后使用 `--force` |
 | `create_incomplete` / 其他退出 `1` | 先读取 [恢复指引](references/recovery.md)，检查已完成步骤，不直接重跑或强制删除 |
 
-多个 code 同时出现时，任一硬性阻断都必须先解决。仅当剩余问题均为 `dirty_worktree` / `branch_unmerged`，且用户授权覆盖这些具体风险时才能强制；授权已明确则直接继续，不再次询问。
+多个 code 同时出现时，任一硬性阻断都必须先解决。仅当剩余问题均为 `dirty_worktree` / `branch_unmerged` / `detached_unreferenced`，且用户授权覆盖这些具体风险时才能强制；授权已明确则直接继续，不再次询问。
 
 不绕过脚本直接执行 `git worktree remove` 或 `git branch -D`。脚本的通用提示不能覆盖上表的具体错误规则。
 
