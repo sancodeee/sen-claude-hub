@@ -8,7 +8,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from worktree_common import WorktreeError, run_git
+from worktree_common import WorktreeError, record_main_repo, resolve_main_repo, run_git
 
 
 COPY_PATHS = [
@@ -35,6 +35,12 @@ def current_branch(repo: Path) -> str:
 
 
 def validate_base_ref(repo: Path, base_ref: str) -> str:
+    if base_ref != "HEAD" and not base_ref.startswith("refs/"):
+        for namespace in ["refs/heads", "refs/remotes"]:
+            candidate = f"{namespace}/{base_ref}"
+            if run_git(repo, ["show-ref", "--verify", "--quiet", candidate], check=False).returncode == 0:
+                base_ref = candidate
+                break
     result = run_git(repo, ["rev-parse", "--verify", "--quiet", f"{base_ref}^{{commit}}"], check=False)
     if result.returncode != 0:
         raise WorktreeError(f"基准分支或引用不存在：{base_ref}")
@@ -157,6 +163,7 @@ def main(argv: list[str]) -> int:
 
     try:
         repo = resolve_repo(Path(args.repo).expanduser().resolve())
+        main_repo = resolve_main_repo(repo)
         target = validate_target(Path(args.target_dir))
         base_branch = args.base_branch or current_branch(repo)
         new_branch = args.new_branch or target.name
@@ -175,6 +182,7 @@ def main(argv: list[str]) -> int:
         if not args.dry_run:
             from config_sync import write_baseline
 
+            record_main_repo(repo, main_repo)
             baseline = write_baseline(target)
             print(f"BASELINE {baseline}")
 

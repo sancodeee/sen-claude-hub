@@ -4,12 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import os
+import stat
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 from config_sync import (
     ConfigSyncChanged,
+    MANAGED_PATHS,
     SyncPlan,
     apply_sync,
     is_managed_status_path,
@@ -17,7 +20,7 @@ from config_sync import (
     print_sync_plan,
     verify_sync_state,
 )
-from worktree_common import WorktreeError, run_git
+from worktree_common import WorktreeError, parse_worktree_list, resolve_main_repo, run_git
 
 
 EXIT_OK = 0
@@ -32,53 +35,15 @@ class CleanupState:
     main_branch: str | None
     target_branch: str | None
     unmanaged_paths: tuple[str, ...]
+    managed_index: str
 
 
 class WorktreeChanged(WorktreeError):
     """The repository state changed after the cleanup prechecks."""
 
 
-def resolve_main_repo(start: Path) -> Path:
-    """Return the main worktree path even when invoked inside a linked worktree."""
-    common_dir = run_git(start, ["rev-parse", "--git-common-dir"]).stdout.strip()
-    common_path = Path(common_dir)
-    if not common_path.is_absolute():
-        toplevel = run_git(start, ["rev-parse", "--show-toplevel"]).stdout.strip()
-        common_path = (Path(toplevel) / common_path).resolve()
-    else:
-        common_path = common_path.resolve()
-    # `git-common-dir` 通常指向主仓库的 .git 目录；其父目录即主 worktree 根
-    if common_path.name == ".git":
-        return common_path.parent
-    # bare 仓库或自定义 GIT_DIR：退化为 show-toplevel
-    return Path(run_git(start, ["rev-parse", "--show-toplevel"]).stdout.strip()).resolve()
-
-
-def parse_worktree_list(repo: Path) -> list[dict]:
-    """Parse `git worktree list --porcelain` into a list of dicts."""
-    raw = run_git(repo, ["worktree", "list", "--porcelain"]).stdout
-    entries: list[dict] = []
-    current: dict = {}
-    for line in raw.splitlines():
-        if not line.strip():
-            if current:
-                entries.append(current)
-                current = {}
-            continue
-        if line.startswith("worktree "):
-            if current:
-                entries.append(current)
-            current = {"path": Path(line[len("worktree "):]).resolve()}
-        elif line.startswith("branch "):
-            ref = line[len("branch "):]
-            current["branch"] = ref[len("refs/heads/"):] if ref.startswith("refs/heads/") else ref
-        elif line.strip() == "bare":
-            current["bare"] = True
-        elif line.strip() == "detached":
-            current["detached"] = True
-    if current:
-        entries.append(current)
-    return entries
+class ConfigIndexConflict(WorktreeError):
+    """A managed file has distinct staged and unstaged versions that must both be retained."""
 
 
 def find_target_entry(entries: list[dict], target: Path) -> dict | None:
@@ -126,6 +91,34 @@ def worktree_dirty_paths(target: Path) -> tuple[list[str], list[str]]:
     return managed, unmanaged
 
 
+def managed_index_snapshot(target: Path) -> str:
+    raw = run_git(target, ["ls-files", "--stage", "-z", "--", *MANAGED_PATHS]).stdout
+    changed = run_git(target, [
+        "diff", "--cached", "--name-only", "-z", "--no-renames", "--no-ext-diff", "--no-textconv",
+        "--", *MANAGED_PATHS,
+    ]).stdout
+    staged_paths = set(changed.split("\0"))
+    for record in raw.split("\0"):
+        if not record:
+            continue
+        metadata, relative_path = record.split("\t", maxsplit=1)
+        if relative_path not in staged_paths:
+            continue
+        mode, object_id, stage = metadata.split()
+        source = target / relative_path
+        working_mode = ""
+        working_id = ""
+        if stage == "0" and mode == "120000" and source.is_symlink():
+            working_mode = "120000"
+            working_id = run_git(target, ["hash-object", "--stdin"], input_text=os.readlink(source)).stdout.strip()
+        elif stage == "0" and mode in {"100644", "100755"} and not source.is_symlink() and source.is_file():
+            working_mode = "100755" if source.stat().st_mode & stat.S_IXUSR else "100644"
+            working_id = run_git(target, ["hash-object", f"--path={relative_path}", "--", relative_path]).stdout.strip()
+        if working_mode != mode or working_id != object_id:
+            raise ConfigIndexConflict(f"暂存配置与工作区不同，保留两份版本: {relative_path}")
+    return raw
+
+
 def capture_cleanup_state(main_repo: Path, target: Path) -> CleanupState:
     return CleanupState(
         run_git(main_repo, ["rev-parse", "HEAD"]).stdout.strip(),
@@ -133,12 +126,13 @@ def capture_cleanup_state(main_repo: Path, target: Path) -> CleanupState:
         repo_head_branch(main_repo),
         repo_head_branch(target),
         tuple(sorted(worktree_dirty_paths(target)[1])),
+        managed_index_snapshot(target),
     )
 
 
 def verify_cleanup_state(main_repo: Path, target: Path, expected: CleanupState) -> None:
     if capture_cleanup_state(main_repo, target) != expected:
-        raise WorktreeChanged("清理期间 HEAD、分支或非受管路径发生变化；请暂停其他写入后重新预检。")
+        raise WorktreeChanged("清理期间 HEAD、分支、受管索引或非受管路径发生变化；请暂停其他写入后重新预检。")
 
 
 def branch_is_merged(repo: Path, branch: str) -> tuple[bool, str]:
@@ -191,7 +185,7 @@ def print_precheck_report(failures: list[tuple[str, str]]) -> None:
         print(f"- code: {code}")
         print(f"  detail: {detail}")
     hard_failure = any(
-        code in {"main_worktree", "branch_is_head", "worktree_changed"} or code.startswith("config_sync_")
+        code in {"main_worktree", "branch_is_head", "worktree_changed", "config_index_conflict"} or code.startswith("config_sync_")
         for code, _ in failures
     )
     if hard_failure:
@@ -265,6 +259,9 @@ def main(argv: list[str]) -> int:
         main_repo = resolve_main_repo(Path(args.repo).expanduser().resolve())
         target = Path(args.target_dir).expanduser().resolve()
         entries = parse_worktree_list(main_repo)
+        if entries:
+            # Git may list the separate metadata directory as its first entry; identity was validated above.
+            entries[0]["path"] = main_repo
         entry = find_target_entry(entries, target)
         if entry is None:
             raise WorktreeError(f"目标不是该仓库已注册的 worktree：{target}")
@@ -330,6 +327,9 @@ def main(argv: list[str]) -> int:
         return EXIT_OK
     except ConfigSyncChanged as exc:
         print_precheck_report([("config_sync_changed", str(exc))])
+        return EXIT_PRECHECK
+    except ConfigIndexConflict as exc:
+        print_precheck_report([("config_index_conflict", str(exc))])
         return EXIT_PRECHECK
     except WorktreeChanged as exc:
         print_precheck_report([("worktree_changed", str(exc))])

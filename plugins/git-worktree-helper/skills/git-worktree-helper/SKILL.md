@@ -54,10 +54,12 @@ python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scri
 - 目录 basename 必须等于分支名最后一级，例如 `wk-demo` 对应 `wk-demo` 或 `codex/wk-demo`。这是本插件的命名约定。
 - 实际创建为 `git worktree add -b <new_branch> <target_dir> <base_ref>`；不使用 `--force`、`-B` 覆盖已有状态。
 - 基准引用在校验时固定为 commit，预演和实际创建均使用该提交；默认基准从当前 HEAD 解析，避免同名标签歧义。输出同时报告引用与提交。
+- 显式基准短名称优先匹配本地分支 `refs/heads/...`，其次匹配远程跟踪分支 `refs/remotes/...`，再按 Git 引用/提交表达式解析。需要同名标签时使用完整 `refs/tags/...`；`HEAD` 始终按当前 HEAD 解析。
 - 仅复制下表存在的配置路径；目标路径已存在时整项跳过、不覆盖，也不递归补齐已有目录。因此已纳入 Git 的配置以基准引用的检出内容为准。
 - 创建预演根据固定提交的文件树判断目标是否已有配置；稀疏检出时还按 Git 的 sparse checkout 规则过滤。Git 缺少 `sparse-checkout check-rules` 能力时明确报错，不输出猜测计划。
 - 顶层符号链接（含失效链接）按原链接文本复制，不展开链接目录，也不覆盖目标已有的失效链接。相对链接在新 worktree 中仍按相对路径解释；基线记录链接本身，不回收链接目标目录中的文件内容。
 - 复制完成后，在 worktree 的 Git 元数据目录写入基线，不写进项目目录。基线 v2 记录普通文件内容与权限；符号链接记录链接目标。
+- 实际创建还会在公共 Git 元数据目录写入 `git-worktree-helper-main-worktree.json`，保存已验证的主 worktree 路径。每次使用前校验它属于同一仓库且不是 linked worktree；预演不写该文件。
 - 不把其他未提交业务代码复制进新 worktree。
 
 ## 配置范围与回收规则
@@ -81,6 +83,10 @@ python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scri
 
 清理期间暂停其他编辑器、代理和进程对相关配置、目标 worktree 及关联分支的写入。脚本会复核状态，但不提供阻止任意外部写入的文件系统锁。
 
+有已暂存的受管配置时，脚本会实际比较索引对象、类型及可执行位与工作区，差异以 `config_index_conflict` 阻断，包括被 `assume-unchanged` / `skip-worktree` 隐藏的差异；两份内容一致时正常回收。不能只依据 `git status` 的路径分类就自动丢弃索引版本。
+
+主目录按实际主工作树身份、Git 注册信息及已验证的插件定位元数据确定，不根据 `.git` 目录名或调用位置猜测。旧的独立元数据布局若无法确定主目录，停止并用 `--repo "<真实主目录>"` 重试；没有主工作树的 bare 仓库不作为配置回收目的地。
+
 首次调用必须不带 `--force`；可保留用户要求的 `--keep-branch`、`--dry-run`：
 
 ```bash
@@ -97,7 +103,7 @@ python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scri
 
 只有配置路径需要强制移除时，脚本会在回收成功后自动使用 Git 的强制移除；该行为不授权丢弃其他路径的数据。
 
-配置计划保留比较时的快照；同步前、同步后和实际删除前复核配置内容、类型及普通文件权限，并检查主项目/目标的 HEAD、分支与非受管脏路径集合。检测到变化时停止并保留 worktree，不能以 `--force` 绕过；这不保证消除最终检查与删除之间的所有竞争窗口。
+配置计划保留比较时的快照；同步前、同步后和实际删除前复核配置内容、类型及普通文件权限，并检查主项目/目标的 HEAD、分支、受管索引条目与非受管脏路径集合。检测到变化时停止并保留 worktree，不能以 `--force` 绕过；这不保证消除最终检查与删除之间的所有竞争窗口。
 
 ### 根据结果决定下一步
 
@@ -109,6 +115,7 @@ python3 "${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/git-worktree-helper/scri
 | `branch_is_head` | 不删除主项目当前分支；用户要求保留分支时可用 `--keep-branch`，否则停止，不强制 |
 | `config_sync_conflict` | 展示冲突路径，先解决冲突；即使用户要求强制也不绕过 |
 | `config_sync_error` | 修复配置/基线读取或写入问题后重试；不删除或重建基线来消除报错，不强制 |
+| `config_index_conflict` | 保留索引和工作区两个版本；先保存或提交所需版本，再整理暂存差异后默认重试，不强制，也不自动 reset / restore / stash |
 | `config_sync_changed` / `worktree_changed` | 停止并保留 worktree；暂停其他写入，检查新增变更后重新默认预检，不强制；恢复细节见 [恢复指引](references/recovery.md) |
 | `dirty_worktree` | 展示路径，说明含未提交、未追踪或忽略文件；保存后重试，或在明确授权丢弃后使用 `--force` |
 | `branch_unmerged` | 说明合并检查以主 worktree 当前 HEAD 为准；可按用户要求保留分支，或在明确授权丢弃提交后使用 `--force` |

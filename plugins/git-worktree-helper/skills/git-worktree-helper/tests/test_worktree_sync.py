@@ -22,6 +22,7 @@ sys.path.insert(0, str(SCRIPTS))
 import config_sync
 import create_worktree
 import remove_worktree
+import worktree_common
 
 
 class WorktreeSyncTest(unittest.TestCase):
@@ -656,6 +657,229 @@ class WorktreeSyncTest(unittest.TestCase):
         self.assertEqual(1, result.returncode)
         self.assertIn("worktree 目录名与分支名不匹配", result.stderr)
         self.assertFalse(target.exists())
+
+    def stage_divergent_config(self) -> None:
+        agents = self.worktree / "AGENTS.md"
+        agents.write_text("unique staged version\n", encoding="utf-8")
+        self.git("add", "AGENTS.md", cwd=self.worktree)
+        agents.write_text("base agents\n", encoding="utf-8")
+
+    def assert_divergent_config_preserved(self, *flags: str, index_flag: str | None = None) -> None:
+        self.stage_divergent_config()
+        if index_flag:
+            self.git("update-index", index_flag, "AGENTS.md", cwd=self.worktree)
+
+        result = self.cleanup(*flags)
+
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn("config_index_conflict", result.stdout)
+        self.assertEqual("unique staged version\n", self.git("show", ":AGENTS.md", cwd=self.worktree).stdout)
+        self.assertEqual("base agents\n", (self.worktree / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertEqual("base agents\n", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertNotEqual("", self.git("branch", "--list", "task").stdout)
+
+    def test_divergent_staged_config_blocks_default_cleanup(self) -> None:
+        self.assert_divergent_config_preserved()
+
+    def test_divergent_staged_config_blocks_force_cleanup(self) -> None:
+        self.assert_divergent_config_preserved("--force")
+
+    def test_assume_unchanged_cannot_hide_divergent_staged_config(self) -> None:
+        self.assert_divergent_config_preserved(index_flag="--assume-unchanged")
+
+    def test_skip_worktree_cannot_hide_divergent_staged_config(self) -> None:
+        self.assert_divergent_config_preserved("--force", index_flag="--skip-worktree")
+
+    def test_staged_added_config_missing_from_worktree_is_preserved(self) -> None:
+        folder = self.worktree / ".codex"
+        folder.mkdir()
+        config = folder / "new.md"
+        config.write_text("index only addition\n", encoding="utf-8")
+        self.git("add", ".codex/new.md", cwd=self.worktree)
+        config.unlink()
+
+        result = self.cleanup("--force")
+
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn("config_index_conflict", result.stdout)
+        self.assertEqual("index only addition\n", self.git("show", ":.codex/new.md", cwd=self.worktree).stdout)
+        self.assertFalse((self.repo / ".codex/new.md").exists())
+        self.assertTrue(self.worktree.exists())
+
+    def test_matching_staged_and_working_config_still_syncs(self) -> None:
+        (self.worktree / "AGENTS.md").write_text("matching staged config\n", encoding="utf-8")
+        self.git("add", "AGENTS.md", cwd=self.worktree)
+
+        result = self.cleanup()
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual("matching staged config\n", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertFalse(self.worktree.exists())
+
+    def test_managed_index_change_after_sync_requires_new_precheck(self) -> None:
+        (self.worktree / "AGENTS.md").write_text("pending config\n", encoding="utf-8")
+        real_apply = remove_worktree.apply_sync
+
+        def stage_after_sync(*args, **kwargs):
+            real_apply(*args, **kwargs)
+            self.git("add", "AGENTS.md", cwd=self.worktree)
+
+        output = io.StringIO()
+        with patch.object(remove_worktree, "apply_sync", side_effect=stage_after_sync), contextlib.redirect_stdout(output):
+            code = remove_worktree.main([str(self.worktree), "--repo", str(self.repo), "--force"])
+
+        self.assertEqual(2, code, output.getvalue())
+        self.assertIn("worktree_changed", output.getvalue())
+        self.assertEqual("pending config\n", self.git("show", ":AGENTS.md", cwd=self.worktree).stdout)
+
+    def create_separate_git_layout(self) -> tuple[Path, Path, Path]:
+        main = self.root / "separate-main"
+        metadata = self.root / "metadata"
+        self.git("init", "-q", "--separate-git-dir", str(metadata), str(main), cwd=self.root)
+        self.git("config", "user.name", "Test User", cwd=main)
+        self.git("config", "user.email", "test@example.com", cwd=main)
+        (main / "AGENTS.md").write_text("separate main baseline\n", encoding="utf-8")
+        self.git("add", "AGENTS.md", cwd=main)
+        self.git("commit", "-qm", "separate initial", cwd=main)
+        peer = self.root / "separate-peer"
+        target = self.root / "separate-target"
+        for worktree in [peer, target]:
+            result = self.run_script(CREATE_SCRIPT, str(worktree), "--repo", str(main))
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        return main, peer, target
+
+    def test_separate_git_dir_recovers_to_real_main_from_peer(self) -> None:
+        main, peer, target = self.create_separate_git_layout()
+        (target / "AGENTS.md").write_text("target update\n", encoding="utf-8")
+
+        result = self.run_script(REMOVE_SCRIPT, str(target), "--repo", str(peer))
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual("target update\n", (main / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertEqual("separate main baseline\n", (peer / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertFalse(target.exists())
+
+    def test_separate_git_dir_can_cleanup_from_target_itself(self) -> None:
+        main, peer, target = self.create_separate_git_layout()
+        (target / "AGENTS.md").write_text("self cleanup update\n", encoding="utf-8")
+
+        result = subprocess.run(
+            [sys.executable, str(REMOVE_SCRIPT), str(target)], cwd=target,
+            text=True, capture_output=True, check=False,
+        )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual("self cleanup update\n", (main / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertTrue(peer.exists())
+        self.assertFalse(target.exists())
+
+    def test_separate_git_dir_main_is_protected_from_peer(self) -> None:
+        main, peer, target = self.create_separate_git_layout()
+
+        result = self.run_script(REMOVE_SCRIPT, str(main), "--repo", str(peer), "--force")
+
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn("main_worktree", result.stdout)
+        self.assertEqual("separate main baseline\n", (main / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertTrue(target.exists())
+
+    def test_legacy_separate_layout_requires_explicit_main_when_locator_is_missing(self) -> None:
+        main, peer, target = self.create_separate_git_layout()
+        (self.root / "metadata" / worktree_common.MAIN_WORKTREE_FILE).unlink()
+        (target / "AGENTS.md").write_text("legacy update\n", encoding="utf-8")
+
+        blocked = self.run_script(REMOVE_SCRIPT, str(target), "--repo", str(peer), "--force")
+
+        self.assertEqual(1, blocked.returncode, blocked.stdout + blocked.stderr)
+        self.assertIn("--repo", blocked.stderr)
+        self.assertTrue(target.exists())
+        self.assertEqual("separate main baseline\n", (peer / "AGENTS.md").read_text(encoding="utf-8"))
+        recovered = self.run_script(REMOVE_SCRIPT, str(target), "--repo", str(main))
+        self.assertEqual(0, recovered.returncode, recovered.stdout + recovered.stderr)
+        self.assertEqual("legacy update\n", (main / "AGENTS.md").read_text(encoding="utf-8"))
+
+    def test_foreign_main_locator_cannot_redirect_configuration(self) -> None:
+        main, peer, target = self.create_separate_git_layout()
+        locator = self.root / "metadata" / worktree_common.MAIN_WORKTREE_FILE
+        locator.write_text(json.dumps({"version": 1, "path": str(self.repo)}), encoding="utf-8")
+        (target / "AGENTS.md").write_text("target update\n", encoding="utf-8")
+
+        result = self.run_script(REMOVE_SCRIPT, str(target), "--repo", str(peer), "--force")
+
+        self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+        self.assertTrue(target.exists())
+        self.assertEqual("separate main baseline\n", (main / "AGENTS.md").read_text(encoding="utf-8"))
+        self.assertEqual("base agents\n", (self.repo / "AGENTS.md").read_text(encoding="utf-8"))
+
+    def test_creation_dry_run_does_not_write_main_locator(self) -> None:
+        locator = self.repo / ".git" / worktree_common.MAIN_WORKTREE_FILE
+        locator.unlink()
+        target = self.root / "preview-locator"
+
+        result = self.run_script(CREATE_SCRIPT, str(target), "--repo", str(self.repo), "--dry-run")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertFalse(locator.exists())
+        self.assertFalse(target.exists())
+        self.assertEqual("", self.git("branch", "--list", target.name).stdout)
+
+    def test_explicit_local_branch_takes_precedence_over_same_named_tag(self) -> None:
+        branch = self.git("branch", "--show-current").stdout.strip()
+        self.git("tag", branch)
+        (self.repo / "latest.txt").write_text("latest branch\n", encoding="utf-8")
+        self.git("add", "latest.txt")
+        self.git("commit", "-qm", "advance branch")
+        expected = self.git("rev-parse", "HEAD").stdout.strip()
+        target = self.root / "explicit-local"
+
+        result = self.run_script(CREATE_SCRIPT, str(target), "--repo", str(self.repo), "--base-branch", branch)
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual(expected, self.git("rev-parse", "HEAD", cwd=target).stdout.strip())
+        self.assertTrue((target / "latest.txt").exists())
+
+    def test_explicit_full_tag_reference_still_uses_tag(self) -> None:
+        branch = self.git("branch", "--show-current").stdout.strip()
+        self.git("tag", branch)
+        expected = self.git("rev-parse", "HEAD").stdout.strip()
+        (self.repo / "latest.txt").write_text("newer branch\n", encoding="utf-8")
+        self.git("add", "latest.txt")
+        self.git("commit", "-qm", "advance branch")
+        target = self.root / "explicit-tag"
+
+        result = self.run_script(CREATE_SCRIPT, str(target), "--repo", str(self.repo), "--base-branch", f"refs/tags/{branch}")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual(expected, self.git("rev-parse", "HEAD", cwd=target).stdout.strip())
+        self.assertFalse((target / "latest.txt").exists())
+
+    def test_explicit_remote_branch_takes_precedence_over_same_named_tag(self) -> None:
+        self.git("tag", "origin/feature")
+        (self.repo / "latest.txt").write_text("remote branch commit\n", encoding="utf-8")
+        self.git("add", "latest.txt")
+        self.git("commit", "-qm", "advance remote branch")
+        expected = self.git("rev-parse", "HEAD").stdout.strip()
+        self.git("update-ref", "refs/remotes/origin/feature", expected)
+        target = self.root / "explicit-remote"
+
+        result = self.run_script(CREATE_SCRIPT, str(target), "--repo", str(self.repo), "--base-branch", "origin/feature")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual(expected, self.git("rev-parse", "HEAD", cwd=target).stdout.strip())
+        self.assertTrue((target / "latest.txt").exists())
+
+    def test_default_head_is_not_shadowed_by_remote_ref_named_head(self) -> None:
+        self.git("update-ref", "refs/remotes/HEAD", self.git("rev-parse", "HEAD").stdout.strip())
+        (self.repo / "latest.txt").write_text("actual current head\n", encoding="utf-8")
+        self.git("add", "latest.txt")
+        self.git("commit", "-qm", "advance actual head")
+        expected = self.git("rev-parse", "HEAD").stdout.strip()
+        target = self.root / "actual-head"
+
+        result = self.run_script(CREATE_SCRIPT, str(target), "--repo", str(self.repo))
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual(expected, self.git("rev-parse", "HEAD", cwd=target).stdout.strip())
 
     def test_accepts_branch_namespace_when_last_component_matches_target_directory(self) -> None:
         target = self.root / "namespaced-task"
