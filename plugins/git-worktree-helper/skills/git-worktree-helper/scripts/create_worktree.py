@@ -34,10 +34,11 @@ def current_branch(repo: Path) -> str:
     return branch
 
 
-def validate_base_ref(repo: Path, base_ref: str) -> None:
-    result = run_git(repo, ["rev-parse", "--verify", "--quiet", base_ref], check=False)
+def validate_base_ref(repo: Path, base_ref: str) -> str:
+    result = run_git(repo, ["rev-parse", "--verify", "--quiet", f"{base_ref}^{{commit}}"], check=False)
     if result.returncode != 0:
         raise WorktreeError(f"基准分支或引用不存在：{base_ref}")
+    return result.stdout.strip()
 
 
 def validate_new_branch(repo: Path, branch: str) -> None:
@@ -65,17 +66,39 @@ def validate_target(target: Path) -> Path:
     return resolved
 
 
-def copy_config_paths(source_repo: Path, target_repo: Path, dry_run: bool) -> list[str]:
+def predicted_config_paths(repo: Path, base_commit: str) -> set[str]:
+    paths = run_git(repo, ["ls-tree", "-r", "-z", "--name-only", base_commit, "--", *COPY_PATHS]).stdout
+    sparse = run_git(repo, ["config", "--bool", "core.sparseCheckout"], check=False)
+    if sparse.returncode not in {0, 1}:
+        raise WorktreeError(sparse.stderr.strip() or "无法读取 sparse checkout 配置")
+    if sparse.stdout.strip() == "true":
+        filtered = run_git(repo, ["sparse-checkout", "check-rules", "-z"], input_text=paths, check=False)
+        if filtered.returncode != 0:
+            raise WorktreeError(
+                "无法预演 sparse checkout；需要支持 sparse-checkout check-rules 的 Git。"
+                f" {filtered.stderr.strip()}"
+            )
+        paths = filtered.stdout
+    return {path.split("/", maxsplit=1)[0] for path in paths.split("\0") if path}
+
+
+def copy_config_paths(
+    source_repo: Path,
+    target_repo: Path,
+    dry_run: bool,
+    predicted_existing: set[str] | None = None,
+) -> list[str]:
     messages: list[str] = []
+    existing_paths = predicted_existing or set()
     for relative_path in COPY_PATHS:
         source = source_repo / relative_path
         target = target_repo / relative_path
 
-        if not source.exists():
+        if not source.exists() and not source.is_symlink():
             messages.append(f"SKIP missing {relative_path}")
             continue
 
-        if target.exists():
+        if target.exists() or target.is_symlink() or relative_path in existing_paths:
             messages.append(f"SKIP exists {relative_path}")
             continue
 
@@ -83,7 +106,7 @@ def copy_config_paths(source_repo: Path, target_repo: Path, dry_run: bool) -> li
             messages.append(f"WOULD copy {relative_path}")
             continue
 
-        if source.is_dir():
+        if source.is_dir() and not source.is_symlink():
             shutil.copytree(source, target, symlinks=True)
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -92,11 +115,14 @@ def copy_config_paths(source_repo: Path, target_repo: Path, dry_run: bool) -> li
     return messages
 
 
-def create_worktree(repo: Path, target: Path, base_branch: str, new_branch: str, dry_run: bool) -> None:
-    command = ["git", "worktree", "add", "-b", new_branch, str(target), base_branch]
+def create_worktree(
+    repo: Path, target: Path, base_branch: str, new_branch: str, dry_run: bool, base_commit: str,
+) -> None:
+    command = ["git", "worktree", "add", "-b", new_branch, str(target), base_commit]
     print(f"Repository: {repo}")
     print(f"Target: {target}")
     print(f"Base branch: {base_branch}")
+    print(f"Base commit: {base_commit}")
     print(f"New branch: {new_branch}")
     print(f"Command: {' '.join(command)}")
 
@@ -104,7 +130,7 @@ def create_worktree(repo: Path, target: Path, base_branch: str, new_branch: str,
         print("Dry run: worktree will not be created.")
         return
 
-    result = run_git(repo, ["worktree", "add", "-b", new_branch, str(target), base_branch], check=False)
+    result = run_git(repo, ["worktree", "add", "-b", new_branch, str(target), base_commit], check=False)
     if result.returncode != 0:
         detail = result.stderr.strip() or result.stdout.strip()
         raise WorktreeError(detail or "git worktree add failed")
@@ -127,20 +153,23 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
+    created = False
 
     try:
         repo = resolve_repo(Path(args.repo).expanduser().resolve())
         target = validate_target(Path(args.target_dir))
         base_branch = args.base_branch or current_branch(repo)
         new_branch = args.new_branch or target.name
-        validate_base_ref(repo, base_branch)
+        base_commit = validate_base_ref(repo, args.base_branch or "HEAD")
         validate_new_branch(repo, new_branch)
         validate_worktree_branch_name(target, new_branch)
 
-        create_worktree(repo, target, base_branch, new_branch, args.dry_run)
+        predicted_existing = predicted_config_paths(repo, base_commit) if args.dry_run else set()
 
-        copy_target = target if not args.dry_run else target
-        for message in copy_config_paths(repo, copy_target, args.dry_run):
+        create_worktree(repo, target, base_branch, new_branch, args.dry_run, base_commit)
+        created = not args.dry_run
+
+        for message in copy_config_paths(repo, target, args.dry_run, predicted_existing):
             print(message)
 
         if not args.dry_run:
@@ -151,8 +180,14 @@ def main(argv: list[str]) -> int:
 
         print("Done")
         return 0
-    except WorktreeError as exc:
+    except (WorktreeError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
+        if created:
+            print("PARTIAL CREATE")
+            print("- code: create_incomplete")
+            print(f"  target: {target}")
+            print(f"  branch: {new_branch}")
+            print("ACTION REQUIRED: worktree 和分支已保留；先检查注册状态、配置和基线，不要覆盖重建。")
         return 1
 
 

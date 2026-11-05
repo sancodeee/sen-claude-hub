@@ -1,19 +1,11 @@
 ---
 name: git-worktree-helper:create
-description: Immediately call the git-worktree-helper skill to create a Git worktree and copy local agent/project configuration files.
-argument-hint: "[目标目录] [--base-branch 分支名] [--new-branch 新分支名] 例如：/tmp/my-worktree --base-branch feature/a"
+description: Call git-worktree-helper to create a Git worktree and copy local agent/project configuration.
+argument-hint: "[目标目录] [--base-branch 分支名] [--new-branch 新分支名] [--dry-run]"
 ---
 
-你现在必须**立即且强制**调用已安装的 **git-worktree-helper** 这个 skill 来处理用户当前的需求。
+立即调用已安装的 **git-worktree-helper** skill，按“创建”流程处理下列请求。沿用用户参数和授权，遵循 skill 的命名校验、预演与失败恢复规则。
 
-用户提供的额外参数/需求（通过 $ARGUMENTS 传入）：
 $ARGUMENTS
 
-核心指令：
-1. 使用 git-worktree-helper skill 中的脚本和安全规则处理 worktree 创建。
-2. 用户传入 `--base-branch` 时以该分支作为基准；未传入时以当前目录项目正在使用的分支作为基准。
-3. 每个 worktree 都创建自己的新分支，默认新分支名为目标目录 basename。使用 `--new-branch` 时，目标目录 basename 必须等于分支名最后一级；例如目录 `wk-demo` 可搭配 `wk-demo` 或 `codex/wk-demo`，否则拒绝创建。
-4. 创建 worktree 后，只复制 skill 中列出的本地配置路径；不存在则跳过。
-5. 不使用 `git worktree add --force` 或 `-B`，如果目标目录或新分支已存在，报告原因。
-
-现在开始：调用 git-worktree-helper skill，并基于它的输出完整响应用户的最新消息。
+所有操作规则以 skill 为准，根据脚本实际结果回复；参数不明确时先只读定位或询问，不直接猜测执行。

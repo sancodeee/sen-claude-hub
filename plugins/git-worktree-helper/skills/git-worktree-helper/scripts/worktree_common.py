@@ -11,11 +11,14 @@ class WorktreeError(Exception):
     """Raised for expected user-facing failures."""
 
 
-def run_git(repo: Path, args: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
+def run_git(
+    repo: Path, args: list[str], check: bool = True, input_text: str | None = None,
+) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         ["git", *args],
         cwd=repo,
         text=True,
+        input=input_text,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,

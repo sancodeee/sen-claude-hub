@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import shutil
+import stat
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,13 +23,14 @@ MANAGED_PATHS = [
     "AGENTS.md",
 ]
 BASELINE_FILE = "git-worktree-helper-baseline.json"
-BASELINE_VERSION = 1
+BASELINE_VERSION = 2
 
 
 @dataclass(frozen=True)
 class Entry:
     kind: str
     digest: str
+    mode: int | None = None
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,18 @@ class SyncAction:
     action: str
     relative_path: str
     detail: str = ""
+
+
+@dataclass(frozen=True)
+class SyncPlan:
+    actions: list[SyncAction]
+    has_baseline: bool
+    main_snapshot: dict[str, Entry]
+    worktree_snapshot: dict[str, Entry]
+
+
+class ConfigSyncChanged(WorktreeError):
+    """The configuration no longer matches the plan validated for cleanup."""
 
 
 def worktree_metadata_dir(worktree: Path) -> Path:
@@ -58,7 +72,7 @@ def describe_path(path: Path) -> Entry | None:
         with path.open("rb") as source:
             for chunk in iter(lambda: source.read(1024 * 1024), b""):
                 digest.update(chunk)
-        return Entry("file", digest.hexdigest())
+        return Entry("file", digest.hexdigest(), stat.S_IMODE(path.stat().st_mode))
     if path.exists():
         return Entry("other", "")
     return None
@@ -93,7 +107,7 @@ def write_baseline(worktree: Path) -> Path:
     payload = {
         "version": BASELINE_VERSION,
         "paths": {
-            path: {"kind": entry.kind, "digest": entry.digest}
+            path: {"kind": entry.kind, "digest": entry.digest, "mode": entry.mode}
             for path, entry in snapshot_managed_paths(worktree).items()
         },
     }
@@ -110,17 +124,47 @@ def load_baseline(worktree: Path) -> dict[str, Entry] | None:
         return None
     try:
         payload = json.loads(source.read_text(encoding="utf-8"))
-        if payload.get("version") != BASELINE_VERSION:
-            raise ValueError(f"unsupported version: {payload.get('version')}")
-        return {
-            path: Entry(value["kind"], value["digest"])
-            for path, value in payload["paths"].items()
-        }
-    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        if not isinstance(payload, dict):
+            raise ValueError("baseline must be an object")
+        version = payload.get("version")
+        if type(version) is not int or version not in {1, BASELINE_VERSION}:
+            raise ValueError(f"unsupported version: {version}")
+        paths = payload.get("paths")
+        if not isinstance(paths, dict):
+            raise ValueError("paths must be an object")
+        entries: dict[str, Entry] = {}
+        for relative_path, value in paths.items():
+            path = Path(relative_path)
+            if path.is_absolute() or ".." in path.parts or not is_managed_status_path(relative_path):
+                raise ValueError(f"invalid managed path: {relative_path}")
+            if not isinstance(value, dict):
+                raise ValueError(f"invalid entry: {relative_path}")
+            kind = value.get("kind")
+            digest = value.get("digest")
+            mode = value.get("mode") if version == BASELINE_VERSION else None
+            if kind not in {"file", "symlink", "dir", "other"} or not isinstance(digest, str):
+                raise ValueError(f"invalid entry type or digest: {relative_path}")
+            if kind == "file":
+                if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+                    raise ValueError(f"invalid file digest: {relative_path}")
+                if version == BASELINE_VERSION and (type(mode) is not int or not 0 <= mode <= 0o7777):
+                    raise ValueError(f"invalid file mode: {relative_path}")
+            elif mode is not None:
+                raise ValueError(f"unexpected file mode: {relative_path}")
+            entries[relative_path] = Entry(kind, digest, mode)
+        return entries
+    except (OSError, KeyError, TypeError, ValueError) as exc:
         raise WorktreeError(f"无法读取配置同步基线 {source}: {exc}") from exc
 
 
-def plan_sync(main_repo: Path, worktree: Path) -> tuple[list[SyncAction], bool]:
+def matches_baseline(entry: Entry | None, baseline: Entry) -> bool:
+    """Old baselines can establish content ancestry, but cannot establish permission ancestry."""
+    return entry is not None and entry.kind == baseline.kind and entry.digest == baseline.digest and (
+        baseline.mode is None or entry.mode == baseline.mode
+    )
+
+
+def plan_sync(main_repo: Path, worktree: Path) -> SyncPlan:
     baseline = load_baseline(worktree)
     main_snapshot = snapshot_managed_paths(main_repo)
     worktree_snapshot = snapshot_managed_paths(worktree)
@@ -163,14 +207,40 @@ def plan_sync(main_repo: Path, worktree: Path) -> tuple[list[SyncAction], bool]:
                 actions.append(SyncAction("CONFLICT", relative_path, "both sides added different content"))
             continue
 
-        if target == base:
+        if base.kind == "file" and base.mode is None and main is not None and main.mode != target.mode:
+            actions.append(SyncAction("CONFLICT", relative_path, "legacy baseline has no permission history"))
+        elif matches_baseline(target, base):
             actions.append(SyncAction("SKIP", relative_path, "worktree unchanged"))
-        elif main == base:
+        elif matches_baseline(main, base):
             actions.append(SyncAction("UPDATE", relative_path))
         else:
             actions.append(SyncAction("CONFLICT", relative_path, "both sides changed"))
 
-    return actions, baseline is not None
+    return SyncPlan(actions, baseline is not None, main_snapshot, worktree_snapshot)
+
+
+def verify_sync_state(main_repo: Path, worktree: Path, plan: SyncPlan, after_sync: bool) -> None:
+    expected_main = plan.main_snapshot.copy()
+    if after_sync:
+        for action in plan.actions:
+            if action.action not in {"COPY", "UPDATE"}:
+                continue
+            expected_main[action.relative_path] = plan.worktree_snapshot[action.relative_path]
+            for parent in Path(action.relative_path).parents:
+                relative_parent = parent.as_posix()
+                if relative_parent in plan.worktree_snapshot:
+                    expected_main.setdefault(relative_parent, plan.worktree_snapshot[relative_parent])
+    try:
+        snapshots = [
+            ("worktree", plan.worktree_snapshot, snapshot_managed_paths(worktree)),
+            ("main", expected_main, snapshot_managed_paths(main_repo)),
+        ]
+    except OSError as exc:
+        raise ConfigSyncChanged(f"无法复核配置状态，保留 worktree: {exc}") from exc
+    for label, expected, actual in snapshots:
+        changed = sorted(path for path in set(expected) | set(actual) if expected.get(path) != actual.get(path))
+        if changed:
+            raise ConfigSyncChanged(f"{label} 配置在计划后发生变化: {', '.join(changed[:10])}")
 
 
 def _remove_destination(path: Path) -> None:
@@ -203,16 +273,22 @@ def _copy_atomically(source: Path, destination: Path) -> None:
             temporary.unlink()
 
 
-def apply_sync(main_repo: Path, worktree: Path, actions: list[SyncAction]) -> None:
-    for action in actions:
+def apply_sync(main_repo: Path, worktree: Path, plan: SyncPlan) -> None:
+    verify_sync_state(main_repo, worktree, plan, after_sync=False)
+    for action in plan.actions:
         if action.action not in {"COPY", "UPDATE"}:
             continue
         source = worktree / action.relative_path
         destination = main_repo / action.relative_path
         try:
+            if describe_path(source) != plan.worktree_snapshot[action.relative_path] or (
+                describe_path(destination) != plan.main_snapshot.get(action.relative_path)
+            ):
+                raise ConfigSyncChanged(f"同步前配置发生变化: {action.relative_path}")
             _copy_atomically(source, destination)
         except OSError as exc:
             raise WorktreeError(f"同步 {action.relative_path} 失败: {exc}") from exc
+    verify_sync_state(main_repo, worktree, plan, after_sync=True)
 
 
 def print_sync_plan(actions: list[SyncAction], has_baseline: bool) -> None:
