@@ -57,10 +57,12 @@ IPage<LoanLeadDbVO> getLoanLeadPage(
 强制规则：
 
 - `tableName` 必须恰好声明一个权限主表；禁止裸写 `@EnableDataPermission`。
-- `tableAbbr` 可省略，声明时最多一个，并且必须与 SQL 中的真实别名一致。
+- `tableAbbr` 声明时最多一个；显式值或省略后生成的限定名，都必须与 SQL 主表实际使用的限定名一致。
+- 省略 `tableAbbr` 不表示运行时从 SQL 自动识别别名。当前 `EnableDataPermissionHandler.generateAbbreviation` 按表名的下划线分段取首字母，例如 `loan_lead -> ll`；仅当 SQL 为 `FROM loan_lead ll` 等匹配写法时可以省略。SQL 使用 `lead` 等其他别名时，应显式声明 `tableAbbr = {"lead"}`；主表没有别名时，不能直接套用省略写法，应显式使用与 SQL 匹配的表限定名，或为 SQL 与注解配置一致的别名。
+- 默认生成规则以当前 `common-rest` 中的 `EnableDataPermissionHandler` 为准；核验 `getEnabledTableNameAndAliasMap`、`generateAbbreviation` 及现有 `EnableDataPermissionHandlerTest`。注解能解析不代表生成的权限 SQL 能执行，还需检查 SQL provider 最终使用的限定名。
 - 注解格式合法不等于运行时支持。添加或审查时必须读取当前 `CustomDataPermissionHandler` 及相关 SQL provider，确认主表已有路由。
 - 本 Skill 核验时的实现支持 `loan_lead`、`loan_application` 和 `loan_quotation`；该列表只是快照，当前分支的 handler 才是事实来源。其他表需要先实现并测试对应权限策略，不能直接套用注解。
 - 数据权限拦截器由 `common-rest` 的 MyBatis-Plus 配置注册，不在配置类上添加 `@EnableDataPermission`。
 - 查询 DTO 中的组织条件不能替代数据权限注解，两者按当前业务规则组合。
 
-数据权限的目标是 fail-closed，但不能把注解存在等同于已经强制执行。当前 handler 遇到 SQL 中不是所声明主表的表节点时会返回 `null`；因此必须确认实际 SQL 包含且命中了声明的权限主表，并测试主表缺失时拒绝执行。变更后至少覆盖：授权范围、无权限、别名、缺失/不支持主表，以及分页/联表 SQL 场景。
+数据权限的目标是 fail-closed，但不能把注解存在等同于已经强制执行。当前 handler 遇到 SQL 中不是所声明主表的表节点时会返回 `null`；因此必须确认实际 SQL 包含且命中了声明的权限主表，并测试主表缺失时拒绝执行。变更后至少覆盖：授权范围、无权限、默认别名省略、非默认别名、无别名主表、缺失/不支持主表，以及分页/联表 SQL 场景；别名场景应验证最终权限条件和 SQL，不能只断言注解元数据。

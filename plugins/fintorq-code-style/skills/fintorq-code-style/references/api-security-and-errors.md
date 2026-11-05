@@ -42,7 +42,11 @@ public class LoanLeadController {
 
 ## 异常与响应
 
-业务异常使用项目 `BusinessException` 和当前 `ExceptionCodeEnum`。选择规则：
+先核对 Controller 所在包、实际匹配的 `@RestControllerAdvice` 范围、Advice 优先级及调用方契约，再选择异常和响应方式。站内默认规则与 OEM S2S 的专用契约分别适用，不能只看到“第三方接口”就假定由某个处理器接管。
+
+### 站内默认接口
+
+由 `GlobalExceptionHandler` 处理的普通站内业务，使用项目 `BusinessException` 和当前 `ExceptionCodeEnum`。选择规则：
 
 - 优先复用已有、语义准确的标准 HTTP 状态码或扩展业务码。
 - 扩展码采用当前枚举约定：前三位表达 HTTP 类别，后三位表达业务细分。
@@ -52,7 +56,24 @@ public class LoanLeadController {
 
 成功响应使用当前 `Result.success(...)` 和分页转换工具；下载、流式输出等直接写响应的接口保持现有异常处理方式。
 
-当前 `GlobalExceptionHandler` 的传输层契约需要保持兼容：多数校验失败、访问拒绝和业务异常使用 HTTP 200 承载 `Result` 中的业务错误码，认证失败使用 HTTP 401，限流使用 HTTP 429。新增或调整异常处理前必须核对当前 handler 与调用方，不能仅为 REST 风格统一改变 HTTP 状态。
+当前 `GlobalExceptionHandler` 的传输层契约需要保持兼容：多数校验失败、访问拒绝和业务异常使用 HTTP 200 承载 `Result` 中的业务错误码，认证失败使用 HTTP 401，限流使用 HTTP 429。不能仅为 REST 风格统一改变站内 HTTP 状态，也不能将该兼容规则套到 OEM S2S 接口。
+
+### OEM S2S 接口
+
+当前 `app-partner` 的 `PartnerApiExceptionHandler` 通过 `@RestControllerAdvice(basePackages = "com.fintorq.ptcenter.controller.oem")` 限定作用域，优先级高于 `GlobalExceptionHandler`。实现前核验当前处理器、Controller 包和异常类型；以下是当前契约快照：
+
+| 异常路径 | HTTP 与响应契约 |
+|---|---|
+| `PartnerApiException` | 保留异常携带的 `httpStatus` 和 `errorCode`，包括既有冲突路径的 HTTP 409。 |
+| `BusinessException`、`MethodArgumentNotValidException`、`HttpMessageNotReadableException`、`MissingRequestHeaderException` | HTTP 400，`metadata.error_code = "INVALID_REQUEST"`。 |
+| `NovatedProviderNotReadyException` | HTTP 503，`metadata.error_code = "PROVIDER_NOT_READY"`。 |
+| 未预期异常 | HTTP 500，`metadata.error_code = "INTERNAL_ERROR"`，响应不泄漏内部细节。 |
+
+该处理器使用真实 HTTP 错误状态，`Result.code` 与该状态值一致，并在 `Result.metadata.error_code` 保留外部协议错误标识。新增场景复用当前外部契约，不将站内业务码或 HTTP 200 包装规则直接搬入，也不随意发明新的外部错误码。
+
+不能把所有“校验异常”都推断为 HTTP 400。当前未单独映射的 `ConstraintViolationException` 若进入该 Advice，会走通用异常分支，返回 HTTP 500 / `INTERNAL_ERROR`；新增映射属于接口契约变更，应先核对实际需求和调用方，再补对应路由测试。
+
+其他包的第三方接口、下载和流式响应需核对各自实际处理链；不能为了套用上述约定擅自移动 Controller 包或扩大 Advice 作用域。修改异常路由时，优先复用当前 `PartnerApiExceptionRoutingTest`，覆盖两类 Advice 同时注册时的 OEM 校验/冲突响应，以及站内历史响应不变；断言 HTTP 状态、`Result.code` 和适用的 `metadata.error_code`。
 
 ## 日志与资源
 
