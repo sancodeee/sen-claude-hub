@@ -28,52 +28,37 @@ public class LoanLeadController {
 }
 ```
 
-- 使用 `@Valid`/`@Validated` 触发 Bean Validation，并为分页大小、格式和必填字段设置合理边界。
-- 使用当前 `PermissionCodeEnum` 与相邻接口约定配置 `@PreAuthorize`；禁止发明权限码。
+- 已有 Bean Validation 约束应通过适用的 `@Valid`/`@Validated` 正确触发；分页大小、请求大小等技术边界按当前配置或基础设施契约校验。
+- 字段必填、长度和格式等具体业务规则由需求与接口契约决定，不因代码规范审查自行添加或修改。检查校验触发、异常映射和敏感信息保护，不判断姓名、手机号等字段应接受哪些业务值。
+- 权限框架接入沿用项目既有 `PermissionCodeEnum` 引用、`@PreAuthorize` 注解和拦截链；核对技术接入是否生效，不发明权限码或决定角色的具体授权范围。
 - 使用 `@Tag`、`@Operation`、`@Parameter` 描述对外契约，但不要复制实现细节。
 - Controller 只转换 Req/DTO/VO/Resp，不直接编排持久化或复杂业务。
 
 ## 安全
 
-- 所有外部输入均按使用场景校验；SQL 使用参数绑定，不拼接用户输入。
+- 外部输入沿用项目既有校验入口与技术边界防护；SQL 值使用参数绑定，排序列等不能绑定的标识符通过项目既有受控映射处理，不拼接外部输入。
 - 输出编码应在正确边界完成，不对所有输入做会改变合法业务值的盲目“清洗”。
 - 密码、Token、密钥、完整证件号、手机号、邮箱及其他敏感字段不得明文记录。
-- 敏感字段是否返回必须结合权限、数据状态和当前脱敏策略判断。
+- 敏感字段处理复用项目已有脱敏与访问控制实现；本 Skill 不决定具体业务响应应返回哪些字段、何种业务状态可见或哪些角色应获授权。
 
 ## 异常与响应
 
-先核对 Controller 所在包、实际匹配的 `@RestControllerAdvice` 范围、Advice 优先级及调用方契约，再选择异常和响应方式。站内默认规则与 OEM S2S 的专用契约分别适用，不能只看到“第三方接口”就假定由某个处理器接管。
+先核对 Controller 所在包、实际匹配的 `@RestControllerAdvice` 范围、Advice 优先级和调用链，再选择项目既有异常类型与处理方式。站内接口和 OEM S2S 等专用处理链分别核验；不能只因接口面向第三方就套用某个处理器，也不能为套用规则移动 Controller 包或扩大 Advice 作用域。
 
-### 站内默认接口
+由 `GlobalExceptionHandler` 处理的接口沿用项目 `BusinessException`、当前 `ExceptionCodeEnum` 等既有类型与调用方式：
 
-由 `GlobalExceptionHandler` 处理的普通站内业务，使用项目 `BusinessException` 和当前 `ExceptionCodeEnum`。选择规则：
-
-- 优先复用已有、语义准确的标准 HTTP 状态码或扩展业务码。
+- 引用已有错误码，遵循当前枚举的编码与声明方式，不硬编码或发明错误码。
 - 扩展码采用当前枚举约定：前三位表达 HTTP 类别，后三位表达业务细分。
-- 特殊前端处理必须在枚举或契约附近说明，例如“不弹提示、仅刷新快照”。
-- 不为单次场景随意新增近义错误码；新增前搜索调用方与前端处理。
-- 错误信息应具体但不能泄漏敏感数据、内部 SQL 或第三方凭证。
+- 新增错误码沿用项目统一枚举的声明与引用方式，避免在调用处散落字面量。
+- 错误输出沿用统一异常处理方式，不能泄漏敏感数据、内部 SQL 或第三方凭证。
+
+本 Skill 不判断某种业务状态是否应报错、应选择哪个业务错误码、提示文案是否符合业务要求或前端应执行哪种业务动作；这些由需求与既有业务契约决定。
 
 成功响应使用当前 `Result.success(...)` 和分页转换工具；下载、流式输出等直接写响应的接口保持现有异常处理方式。
 
-当前 `GlobalExceptionHandler` 的传输层契约需要保持兼容：多数校验失败、访问拒绝和业务异常使用 HTTP 200 承载 `Result` 中的业务错误码，认证失败使用 HTTP 401，限流使用 HTTP 429。不能仅为 REST 风格统一改变站内 HTTP 状态，也不能将该兼容规则套到 OEM S2S 接口。
+异常到 HTTP 状态及 `Result` 的映射，以当前匹配的处理器和调用方技术契约为准，不在 Skill 中维护响应结果快照。`app-partner` 中 OEM 接口的 `PartnerApiExceptionHandler` 与站内 `GlobalExceptionHandler` 可能具有不同作用域和优先级，应先读取当前实现。不能仅因异常属于“校验异常”就推定某个 HTTP 状态或错误标识。
 
-### OEM S2S 接口
-
-当前 `app-partner` 的 `PartnerApiExceptionHandler` 通过 `@RestControllerAdvice(basePackages = "com.fintorq.ptcenter.controller.oem")` 限定作用域，优先级高于 `GlobalExceptionHandler`。实现前核验当前处理器、Controller 包和异常类型；以下是当前契约快照：
-
-| 异常路径 | HTTP 与响应契约 |
-|---|---|
-| `PartnerApiException` | 保留异常携带的 `httpStatus` 和 `errorCode`，包括既有冲突路径的 HTTP 409。 |
-| `BusinessException`、`MethodArgumentNotValidException`、`HttpMessageNotReadableException`、`MissingRequestHeaderException` | HTTP 400，`metadata.error_code = "INVALID_REQUEST"`。 |
-| `NovatedProviderNotReadyException` | HTTP 503，`metadata.error_code = "PROVIDER_NOT_READY"`。 |
-| 未预期异常 | HTTP 500，`metadata.error_code = "INTERNAL_ERROR"`，响应不泄漏内部细节。 |
-
-该处理器使用真实 HTTP 错误状态，`Result.code` 与该状态值一致，并在 `Result.metadata.error_code` 保留外部协议错误标识。新增场景复用当前外部契约，不将站内业务码或 HTTP 200 包装规则直接搬入，也不随意发明新的外部错误码。
-
-不能把所有“校验异常”都推断为 HTTP 400。当前未单独映射的 `ConstraintViolationException` 若进入该 Advice，会走通用异常分支，返回 HTTP 500 / `INTERNAL_ERROR`；新增映射属于接口契约变更，应先核对实际需求和调用方，再补对应路由测试。
-
-其他包的第三方接口、下载和流式响应需核对各自实际处理链；不能为了套用上述约定擅自移动 Controller 包或扩大 Advice 作用域。修改异常路由时，优先复用当前 `PartnerApiExceptionRoutingTest`，覆盖两类 Advice 同时注册时的 OEM 校验/冲突响应，以及站内历史响应不变；断言 HTTP 状态、`Result.code` 和适用的 `metadata.error_code`。
+新增或调整异常处理时，定向验证相关 Advice 同时注册后的实际路由、异常类型与原因链、HTTP 状态及响应结构中既有错误标识的传递，确认受影响调用方的技术兼容性。测试期望依据当前代码和明确的技术契约取得，不在规范审查中重新选择业务错误或改变既有传输方式。
 
 ## 日志与资源
 

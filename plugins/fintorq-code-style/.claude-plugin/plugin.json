@@ -1,7 +1,7 @@
 {
   "name": "fintorq-code-style",
-  "version": "1.1.2",
-  "description": "Code style and development standards for Fintorq Java backend repositories.",
+  "version": "1.1.3",
+  "description": "Project coding conventions for Fintorq Java backend code; excludes business rule and content validation.",
   "author": {
     "name": "sen"
   }

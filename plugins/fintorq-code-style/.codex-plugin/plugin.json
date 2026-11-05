@@ -1,15 +1,15 @@
 {
   "name": "fintorq-code-style",
-  "version": "1.1.2",
-  "description": "Code style and development standards for Fintorq Java backend repositories.",
+  "version": "1.1.3",
+  "description": "Project coding conventions for Fintorq Java backend code; excludes business rule and content validation.",
   "author": {
     "name": "sen"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Fintorq Code Style",
-    "shortDescription": "Apply Fintorq development standards.",
-    "longDescription": "Review and implement Fintorq Java code using the project's established architecture, naming, data, security, and testing conventions.",
+    "shortDescription": "Follow Fintorq Java coding conventions.",
+    "longDescription": "Review and implement Fintorq Java code following the project's naming, layering, persistence, security, exception-handling, and testing conventions. Business rule and content validation are outside this plugin's scope.",
     "developerName": "sen",
     "category": "Developer Tools",
     "capabilities": [
@@ -18,8 +18,8 @@
       "Code generation"
     ],
     "defaultPrompt": [
-      "Review this code against Fintorq standards.",
-      "Implement this Java change using Fintorq conventions.",
+      "Review this code against Fintorq coding conventions.",
+      "Implement this Java change using Fintorq coding conventions.",
       "Check this module for Fintorq code style violations."
     ]
   }

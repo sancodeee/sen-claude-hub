@@ -143,7 +143,7 @@ codex plugin add resume-forge@sen-claude-hub
 | 插件 | Claude Code 命令 | Codex 示例 prompt | 典型用途 |
 |------|------------------|-------------------|----------|
 | `global-java-code-style` | `/global-java-code-style:invoke` | `Review this Java code for style and quality issues.` | 通用 Java 编码规范 |
-| `fintorq-code-style` | `/fintorq-code-style:invoke` | `Review this code against Fintorq standards.` | Fintorq 项目代码规范 |
+| `fintorq-code-style` | `/fintorq-code-style:invoke` | `Review this code against Fintorq coding conventions.` | Fintorq 项目代码规范，不验收业务规则或业务内容 |
 | `agent-browser-integration-testing` | `/agent-browser-integration-testing:invoke` | `Run an end-to-end test for this web application.` | 浏览器自动化与 E2E 测试 |
 | `byd-vehicle-scrape` | `/byd-vehicle-scrape:invoke` | `Scrape the latest data for BYD Atto 2.` | 比亚迪车型数据爬取与 SQL 生成 |
 | `jenkins-cli` | `/jenkins-cli:invoke` | `List the Jenkins jobs available to me.` | Jenkins CLI 使用与诊断 |

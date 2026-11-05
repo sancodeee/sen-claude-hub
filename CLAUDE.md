@@ -40,7 +40,7 @@ Scripts are then invoked as `"${PLUGIN_ROOT:?PLUGIN_ROOT must be set}/skills/<na
 
 ## Plugins in this repo
 
-- **global-java-code-style** / **fintorq-code-style** — reference-only skills (no scripts) providing Java coding standards; `fintorq-code-style` is project-specific and marked MUST-follow.
+- **global-java-code-style** / **fintorq-code-style** — reference-only skills (no scripts) providing Java coding standards; `fintorq-code-style` follows project coding conventions and excludes business rule and content validation.
 - **agent-browser-integration-testing** — browser E2E testing driven by the external `agent-browser` CLI; includes `scripts/validate-report.js` and report templates.
 - **byd-vehicle-scrape** — Node + Playwright scraper that produces JSON then SQL.
 - **jenkins-cli** — guidance + risk-tiered operating rules, a portable Bash wrapper and Python unittest coverage; splits safe / change / dangerous operations across `references/`.

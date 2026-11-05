@@ -143,7 +143,7 @@ See the "Codex example prompt" column below for more per-plugin examples.
 | Plugin | Claude Code command | Codex example prompt | Typical use |
 |--------|---------------------|----------------------|-------------|
 | `global-java-code-style` | `/global-java-code-style:invoke` | `Review this Java code for style and quality issues.` | General Java coding standards |
-| `fintorq-code-style` | `/fintorq-code-style:invoke` | `Review this code against Fintorq standards.` | Fintorq project code standards |
+| `fintorq-code-style` | `/fintorq-code-style:invoke` | `Review this code against Fintorq coding conventions.` | Fintorq coding conventions; excludes business rule and content validation |
 | `agent-browser-integration-testing` | `/agent-browser-integration-testing:invoke` | `Run an end-to-end test for this web application.` | Browser automation and E2E testing |
 | `byd-vehicle-scrape` | `/byd-vehicle-scrape:invoke` | `Scrape the latest data for BYD Atto 2.` | BYD vehicle data scraping and SQL generation |
 | `jenkins-cli` | `/jenkins-cli:invoke` | `List the Jenkins jobs available to me.` | Jenkins CLI usage and diagnostics |

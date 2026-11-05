@@ -55,7 +55,7 @@ Frontend <- Resp <- Controller <- VO      <- Service <- DbVO <- Mapper <- Databa
 - Controller 接收基础参数或 `Req`，对外顶层响应优先为 `Result<Resp>`；分页响应使用项目现有 `CommonPageResp`。
 - Service 接收基础参数、`Req` 或 `DTO`，向 Controller 返回业务 `VO`。
 - Mapper 接收基础参数或查询 `DTO`，复杂查询通常返回 `DbVO`；聚合投影、跨模块契约或既有 read model 可以使用语义明确的 `DTO`、`VO`、`FacadeDTO`、`FacadeVO` 等类型。自定义对象参数按 XML 名称添加 `@Param`。
-- `Resp` 嵌套已有 `VO` 仅在字段语义、脱敏规则和前端契约完全一致时使用；需要裁剪、改名或脱敏时创建专用 `Resp`。
+- `Resp` 复用已有 `VO` 时遵循当前分层和序列化约定；实现字段裁剪、改名或脱敏时使用专用 `Resp`，不借规范审查重新决定业务响应应包含哪些字段。
 
 这是新代码的默认边界，不是重写兼容接口的理由。审查旧接口时先判断是否存在真实泄漏、安全或维护风险，再决定是否迁移。
 

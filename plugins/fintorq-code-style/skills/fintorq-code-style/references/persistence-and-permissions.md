@@ -8,7 +8,7 @@
 - `@TableName` 必须对应当前 migration/DDL 中的真实表名。表名通常使用小写下划线并带业务域前缀，如 `loan_`、`auth_`、`comm_`；禁止根据类名臆造表名或统一移除前缀。
 - `@TableField`、逻辑删除字段和版本字段沿用现有实体及 MyBatis-Plus 配置，不擅自改变字段语义。
 
-当前 `BaseCommonPO.deleteFlag` 只有 `@TableField`，项目也未配置 MyBatis-Plus 全局逻辑删除，因此不能假设查询会自动追加 `delete_flag` 条件；必须检查现有 Wrapper、Mapper/XML，并按业务语义显式过滤。实体上的 `@Version` 也不等于乐观锁已经生效：先检查 `MybatisPlusInterceptor` 是否注册 `OptimisticLockerInnerInterceptor`。当前配置未注册该拦截器，需要沿用相关业务的条件更新和版本递增机制。
+逻辑删除和乐观锁沿用当前项目的注解、拦截器及 Mapper 实现方式，不假定存在未配置的自动行为，也不由本 Skill 决定业务记录的过滤或状态更新条件。
 
 ## 审计字段与时间类型
 
@@ -41,7 +41,7 @@ IPage<LoanLeadDbVO> getLoanLeadPage(
         @Param("dto") LoanLeadListDTO dto);
 ```
 
-查询必须考虑现有逻辑删除、版本控制、组织隔离和索引条件；是否由框架自动处理必须以实际注解和拦截器配置为准。不要使用字符串拼接构造外部输入 SQL。
+查询复用项目既有 Wrapper、Mapper/XML 和拦截器用法；不通过字符串拼接将外部输入构造为 SQL。
 
 ## `@EnableDataPermission`
 
@@ -61,8 +61,8 @@ IPage<LoanLeadDbVO> getLoanLeadPage(
 - 省略 `tableAbbr` 不表示运行时从 SQL 自动识别别名。当前 `EnableDataPermissionHandler.generateAbbreviation` 按表名的下划线分段取首字母，例如 `loan_lead -> ll`；仅当 SQL 为 `FROM loan_lead ll` 等匹配写法时可以省略。SQL 使用 `lead` 等其他别名时，应显式声明 `tableAbbr = {"lead"}`；主表没有别名时，不能直接套用省略写法，应显式使用与 SQL 匹配的表限定名，或为 SQL 与注解配置一致的别名。
 - 默认生成规则以当前 `common-rest` 中的 `EnableDataPermissionHandler` 为准；核验 `getEnabledTableNameAndAliasMap`、`generateAbbreviation` 及现有 `EnableDataPermissionHandlerTest`。注解能解析不代表生成的权限 SQL 能执行，还需检查 SQL provider 最终使用的限定名。
 - 注解格式合法不等于运行时支持。添加或审查时必须读取当前 `CustomDataPermissionHandler` 及相关 SQL provider，确认主表已有路由。
-- 本 Skill 核验时的实现支持 `loan_lead`、`loan_application` 和 `loan_quotation`；该列表只是快照，当前分支的 handler 才是事实来源。其他表需要先实现并测试对应权限策略，不能直接套用注解。
+- 可用主表以当前分支的 handler 路由为准，不在 Skill 中维护业务表支持清单，也不根据示例为其他业务表制定权限策略。
 - 数据权限拦截器由 `common-rest` 的 MyBatis-Plus 配置注册，不在配置类上添加 `@EnableDataPermission`。
-- 查询 DTO 中的组织条件不能替代数据权限注解，两者按当前业务规则组合。
+- 查询 DTO 中的组织条件不能替代项目要求的数据权限注解；遵循既有接入方式，不由本 Skill 判断组织条件的业务取值。
 
-数据权限的目标是 fail-closed，但不能把注解存在等同于已经强制执行。当前 handler 遇到 SQL 中不是所声明主表的表节点时会返回 `null`；因此必须确认实际 SQL 包含且命中了声明的权限主表，并测试主表缺失时拒绝执行。变更后至少覆盖：授权范围、无权限、默认别名省略、非默认别名、无别名主表、缺失/不支持主表，以及分页/联表 SQL 场景；别名场景应验证最终权限条件和 SQL，不能只断言注解元数据。
+涉及权限框架接入的修改，定向验证注解参数、SQL 主表及别名匹配、路由和既有 fail-closed 机制；不把注解存在等同于接入正确。不检查或验收各角色、组织应能访问哪些具体业务记录，不制定业务权限矩阵。
