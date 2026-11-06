@@ -15,7 +15,7 @@
 | 插件 | 版本 | 分类 | 作用 |
 |------|------|------|------|
 | `global-java-code-style` | 1.0.0 | Developer Tools | 通用 Java 编码、架构、异常处理、测试与安全规范 |
-| `fintorq-code-style` | 1.1.3 | Developer Tools | Fintorq 项目代码规范，不含业务规则或业务内容验收 |
+| `fintorq-code-style` | 1.1.4 | Developer Tools | Fintorq 项目代码规范，不含业务规则或业务内容验收 |
 | `agent-browser-integration-testing` | 1.0.0 | Productivity | 基于 agent-browser CLI 的浏览器自动化与端到端集成测试 |
 | `byd-vehicle-scrape` | 1.0.0 | Data | 爬取比亚迪车型配置与价格数据并生成 MySQL SQL |
 | `jenkins-cli` | 1.0.2 | Productivity | 本机 Jenkins CLI 使用指南与高风险操作边界控制 |

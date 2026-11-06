@@ -59,8 +59,8 @@ IPage<LoanLeadDbVO> getLoanLeadPage(
 - `tableName` 必须恰好声明一个权限主表；禁止裸写 `@EnableDataPermission`。
 - `tableAbbr` 声明时最多一个；显式值或省略后生成的限定名，都必须与 SQL 主表实际使用的限定名一致。
 - 省略 `tableAbbr` 不表示运行时从 SQL 自动识别别名。当前 `EnableDataPermissionHandler.generateAbbreviation` 按表名的下划线分段取首字母，例如 `loan_lead -> ll`；仅当 SQL 为 `FROM loan_lead ll` 等匹配写法时可以省略。SQL 使用 `lead` 等其他别名时，应显式声明 `tableAbbr = {"lead"}`；主表没有别名时，不能直接套用省略写法，应显式使用与 SQL 匹配的表限定名，或为 SQL 与注解配置一致的别名。
-- 默认生成规则以当前 `common-rest` 中的 `EnableDataPermissionHandler` 为准；核验 `getEnabledTableNameAndAliasMap`、`generateAbbreviation` 及现有 `EnableDataPermissionHandlerTest`。注解能解析不代表生成的权限 SQL 能执行，还需检查 SQL provider 最终使用的限定名。
-- 注解格式合法不等于运行时支持。添加或审查时必须读取当前 `CustomDataPermissionHandler` 及相关 SQL provider，确认主表已有路由。
+- 默认生成规则以当前 `EnableDataPermissionHandler` 为准；规则不明确时再定位别名生成方法或相关测试。注解能解析不代表最终权限 SQL 正确。
+- 仅在权限注解、SQL 主表/别名/作用域、权限路由发生变化，或有具体接入疑点时，核对主表路由及相关 handler/provider。优先复用本任务已确认且未变化的依据，不为普通命名或格式审查重复读取基础设施。
 - 可用主表以当前分支的 handler 路由为准，不在 Skill 中维护业务表支持清单，也不根据示例为其他业务表制定权限策略。
 - 数据权限拦截器由 `common-rest` 的 MyBatis-Plus 配置注册，不在配置类上添加 `@EnableDataPermission`。
 - 查询 DTO 中的组织条件不能替代项目要求的数据权限注解；遵循既有接入方式，不由本 Skill 判断组织条件的业务取值。
